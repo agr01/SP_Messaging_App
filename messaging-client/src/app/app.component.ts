@@ -2,8 +2,7 @@ import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ChatComponent } from './components/chat/chat.component';
-import { WebSocketService } from './services/web-socket.service';
-import { ChatService } from './services/chat.service';
+import { CryptoService } from './services/crypto.service';
 
 @Component({
   selector: 'app-root',
@@ -15,9 +14,12 @@ import { ChatService } from './services/chat.service';
 export class AppComponent {
   
   constructor(
-    private webSocketService: WebSocketService,
-    private chatService: ChatService
+    private cryptoService: CryptoService
   ) {
 
+   }
+
+   async ngOnInit(){
+    await this.cryptoService.generateRsaKeys();
    }
 }
