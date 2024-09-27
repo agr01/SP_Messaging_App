@@ -19,28 +19,11 @@ export class ChatService {
     private webSocketService: WebSocketService,
   ) { 
 
-    this.webSocketService.webSocket$
-    .pipe(
-      tap((value: string) => {
-        // Log the raw received data for debugging
-        console.log('Received raw data:', value);
-      }),
-      catchError((error) => {
-        // TODO: Make error messages dev only
-        console.error("websocket chat error:", error);
-        return throwError(() => new Error(error));
-      }),
-      retry({ delay: 5_000 }),
-      takeUntilDestroyed()
-    )
-    .subscribe((value: any) => {
-      if (value) {
-        
-        // TODO: Validate message format
-        // Process the parsed message
-        this.addMessage(value.message); 
-      }
+    // Listen for incoming messages
+    this.webSocketService.messageRecieved$.subscribe((message: any) => {
+      this.addMessage(message.message);
     });
+    
   }
 
   // TODO: filter by selected user
