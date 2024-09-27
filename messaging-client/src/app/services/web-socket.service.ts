@@ -5,8 +5,9 @@ import { webSocket } from 'rxjs/webSocket';
   providedIn: 'root',
 })
 export class WebSocketService {
-  private readonly URL = 'ws://localhost:3000';
-  private webSocketSubject = webSocket<string>(this.URL);
+  // TODO: Change to actual websocket server
+  private readonly URL = 'ws://localhost:3000/echo';
+  private webSocketSubject = webSocket<any>(this.URL);
   public webSocket$ = this.webSocketSubject.asObservable();
 
   sendMessage(message: string): void {

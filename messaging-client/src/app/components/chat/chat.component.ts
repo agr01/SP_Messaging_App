@@ -18,18 +18,18 @@ export class ChatComponent {
   constructor(
     private chatService: ChatService
   ) { 
-
     this.messages = chatService.getMessages();
   }
 
 
+  // Trims input & sends message via the chatService
   sendMessage(){
     
     const text = this.inputBox.nativeElement.textContent;
 
     if ( !(text || '').trim().length ) return;
 
-    this.chatService.addMessage(text.trim());
+    this.chatService.sendMessage(text.trim());
 
     this.inputBox.nativeElement.textContent = ""
   }

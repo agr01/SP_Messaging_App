@@ -16,38 +16,54 @@ Accepts the  websocket connection and attempts to process data mes
 
 
 */
+
+var clientId = 0;
+
 wss.on('connection', (ws) => {
 
-  const clientId = uuidv4(); // Generate a unique ID for each client
-  clients.set(clientId, ws); // Store the connection
+  // const clientId = uuidv4(); // Generate a unique ID for each client
+  // clients.set(clientId, ws); // Store the connection
 
-  console.log(`New client connected: ${clientId}`);
+  clientId++
+
+  console.log(`New client connected: ${clientId}`)
 
   // Listen for messages from the client
   ws.on('message', (message) => {
-    console.log(`Received message from ${clientId}: ${message}`);
+    console.log(`Received message from ${clientId}: ${message}`)
+    
+    const reply = {message:`Reply to ${message}`}
+    ws.send(
+      JSON.stringify(reply)
+    )
+
   });
 
   // Handle client disconnection
   ws.on('close', () => {
-    console.log(`Client disconnected: ${clientId}`);
+    console.log(`Client disconnected: ${clientId}`)
     clients.delete(clientId); // Remove the connection from the tracking object
   });
 
   // Send a message to the client
-  ws.send('Welcome, you are connected!');
+  const connectionMessage = JSON.stringify({message: "Connection Success"})
+  console.log(`Sending response: ${connectionMessage}`);
+  ws.send(
+    connectionMessage
+  );
+
 });
 
-app.get('/', function (req, res) {
-  res.send('Hello World')
-})
+// app.get('/', function (req, res) {
+//   res.send('Hello World')
+// })
 
-app.ws('/echo', function(ws, req) {
-  ws.on('message', function(msg) {
-    console.log(msg);
-    ws.send(msg);
-  });
-});
+// app.ws('/echo', function(ws, req) {
+//   ws.on('message', function(msg) {
+//     console.log(msg);
+//     ws.send(msg);
+//   });
+// });
 
   
 server.listen(port, () => {

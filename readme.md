@@ -7,3 +7,8 @@ Before running the program for the first time:
 Running the Server
 
 $env:PORT=3000; node server.js
+
+
+Running the Client
+
+ng serve
