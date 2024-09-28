@@ -1,2 +1,8 @@
 
-<div class="p-5 font-semibold text-xl text-light-1">Online</div>
+<div class="p-5 font-semibold text-xl text-light-1 min-w-0">Online</div>
+
+@if(clientService.onlineClients$ | async; as clients){
+    @for(client of clients; track client.publicKey){
+        <div class="text-sm p-3 w-full break-words whitespace-normal">{{client.publicKey}}</div>
+    }
+}

@@ -21,7 +21,13 @@ export class ChatService {
 
     // Listen for incoming messages
     this.webSocketService.messageRecieved$.subscribe((message: any) => {
-      this.addMessage(message.message);
+      
+      // TODO: check format
+      // TODO: Validate message (validate signature)
+      if (message.data?.type === "chat"){
+        this.addMessage(message.message);
+      }
+      
     });
     
   }
@@ -42,6 +48,6 @@ export class ChatService {
 
     this.addMessage(message);
 
-    this.webSocketService.sendMessage(message)
+    this.webSocketService.sendAsJson(message)
   }
 }
