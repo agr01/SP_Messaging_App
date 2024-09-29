@@ -18,7 +18,7 @@ export class CryptoService {
   constructor() { }
 
   // Generate RSA Keys
-  async generateRsaKeys(): Promise<void> {
+  public async generateRsaKeys(): Promise<void> {
     
     // Generate PSS Keys
     this.RsaPssKeyPair = await window.crypto.subtle.generateKey(
@@ -67,7 +67,7 @@ export class CryptoService {
   }
 
   // Encrypt data using RSA public key
-  async encryptRsa(publicKeyPem: string, data: string): Promise<string> {
+  public async encryptRsa(publicKeyPem: string, data: string): Promise<string> {
     
     const publicKey = await this.pemToCryptoKey(publicKeyPem);
 
@@ -83,7 +83,7 @@ export class CryptoService {
 
   // Signs the data using the user's private RSA key
   // Returns a base64 encoded signature
-  async signRsa(data: string): Promise<string>{
+  public async signRsa(data: string): Promise<string>{
     
     if (!this.RsaPssKeyPair?.privateKey) throw new Error("Could not sign message");
 
@@ -110,7 +110,7 @@ export class CryptoService {
   }
   
   // Decrypt message using RSA private key
-  async decryptRsa(encryptedMessage: string): Promise<string> {
+  public async decryptRsa(encryptedMessage: string): Promise<string> {
 
     if (!this.RsaOaepKeyPair) throw new Error("Could not encrypt message");
 
@@ -128,7 +128,7 @@ export class CryptoService {
   // Encrypts plaintext using a generated AES key
   // Returns iv and ciphertext
   // Source: https://medium.com/@tony.infisical/guide-to-web-crypto-api-for-encryption-decryption-1a2c698ebc25
-  async encryptAES(plainText:string) {
+  public async encryptAES(plainText:string) {
   
     // encode the text you want to encrypt
     const encodedText = new TextEncoder().encode(plainText);
@@ -166,7 +166,7 @@ export class CryptoService {
   }
 
   // Returns the user's public key in PEM format
-  async getPublicKeyPem(): Promise<string>{
+  public async getPublicKeyPem(): Promise<string>{
     
     if (!this.RsaPssKeyPair) throw new Error("Could not get public key");
 
@@ -196,12 +196,16 @@ export class CryptoService {
     return pem;
   }
 
+  public removePemHeaders(pem: string): string{
+    return pem.replace(/-----BEGIN PUBLIC KEY-----/g, '')
+            .replace(/-----END PUBLIC KEY-----/g, '');
+  }
+
   
-  async pemToCryptoKey(pem: string) {
+  private async pemToCryptoKey(pem: string) {
     
     // Remove the PEM header, footer & whitespace
-    const pemFormatted = pem.replace(/-----BEGIN PUBLIC KEY-----/g, '')
-                              .replace(/-----END PUBLIC KEY-----/g, '')
+    const pemFormatted = this.removePemHeaders(pem)
                               .replace(/\s+/g, ''); 
 
     // Decode the Base64 string to a byte array

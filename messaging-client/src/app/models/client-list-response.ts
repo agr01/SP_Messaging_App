@@ -1,3 +1,5 @@
+import { Client } from "./client";
+
 export interface ClientListResponse {
   type: string        // "client_list"
   servers: [{
@@ -9,12 +11,22 @@ export interface ClientListResponse {
 
 export function sanitizeClientListResponse(message: any): ClientListResponse | null {
 
-  if (isClientListResponse(message)) {
-    return {
-      type: message.type,
-      servers: message.servers
-    };
+  if (isClientListResponse(message) === null) return null;
+
+  let newMessage = {
+    type: message.type
+  } as ClientListResponse
+
+  for (const server of message.servers){
+    newMessage.servers.push({address: server.address, clients: server.clients})
   }
+
+    
+  return {
+    type: message.type,
+    servers: message.servers
+  };
+  
 
   return null;
 }
