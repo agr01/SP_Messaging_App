@@ -55,13 +55,25 @@ export class ClientService implements OnDestroy {
     );
 
     this.messageRecievedSubscription = this.webSocketService.messageRecieved$.subscribe(
-      (message: any) => {
+      
+      async (message: any) => {
         const clientListResponse = sanitizeClientListResponse(message)
 
         if (clientListResponse !== null){
           this.addClientsFromList(clientListResponse)
+          
+          if (!(await this.containsSelf(clientListResponse))){
+            console.log("Client list does not contain self, resending hello and list request");
+            this.sendServerHello();
+            this.sendClientRequest();
+          }
+          else{
+            console.log("client list contains self");
+            
+          }
         }
       }
+
     );
 
   }
@@ -78,8 +90,6 @@ export class ClientService implements OnDestroy {
     helloData.type = "hello";
     helloData.public_key = await this.cryptoService.getPublicKeyPem();
 
-    console.log("Created hello data: ", helloData)
-
     this.webSocketService.sendAsData(helloData);
   }
 
@@ -92,6 +102,8 @@ export class ClientService implements OnDestroy {
   // client list response
   private addClientsFromList(list: ClientListResponse){
 
+    console.log("Adding clients from: ", list)
+
     let newClientList: Client[] = []
 
     for (const server of list.servers){
@@ -100,7 +112,26 @@ export class ClientService implements OnDestroy {
       }
     }
 
+    console.log()
+
     this._onlineClients.next(newClientList);
+  }
+
+  private async containsSelf(list: ClientListResponse): Promise<boolean>{
+    let ownPublicKey = await this.cryptoService.getPublicKeyBase64()
+
+
+    for (const server of list.servers){
+      const keyMatch = server.clients.find(client => this.cryptoService.pemToBase64key(client) === ownPublicKey)
+      
+      if (keyMatch){
+        console.log("found match", keyMatch)
+        return true;
+      }
+
+    }
+    
+    return false;
   }
 
 }

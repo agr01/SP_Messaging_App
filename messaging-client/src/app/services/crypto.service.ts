@@ -168,6 +168,14 @@ export class CryptoService {
   // Returns the user's public key in PEM format
   public async getPublicKeyPem(): Promise<string>{
     
+    let base64Key = await this.getPublicKeyBase64();
+
+    return await this.cryptoKeyToPem(base64Key);
+  }
+
+   // Returns the user's public key in base64
+   public async getPublicKeyBase64(): Promise<string>{
+    
     if (!this.RsaPssKeyPair) throw new Error("Could not get public key");
 
     // Export the public key to SPKI format
@@ -177,9 +185,7 @@ export class CryptoService {
     );
 
     // Convert the SPKI ArrayBuffer to a Base64 string
-    const base64String = Buffer.from(publicKey).toString('base64') 
-
-    return await this.cryptoKeyToPem(base64String);
+    return Buffer.from(publicKey).toString('base64') 
   }
 
   // Converts a base64 key to a PEM string
@@ -196,16 +202,17 @@ export class CryptoService {
     return pem;
   }
 
-  public removePemHeaders(pem: string): string{
+  public pemToBase64key(pem: string): string{
     return pem.replace(/-----BEGIN PUBLIC KEY-----/g, '')
-            .replace(/-----END PUBLIC KEY-----/g, '');
+            .replace(/-----END PUBLIC KEY-----/g, '')
+            .replace(/[\r\n]+/g, '');
   }
 
   
   private async pemToCryptoKey(pem: string) {
     
     // Remove the PEM header, footer & whitespace
-    const pemFormatted = this.removePemHeaders(pem)
+    const pemFormatted = this.pemToBase64key(pem)
                               .replace(/\s+/g, ''); 
 
     // Decode the Base64 string to a byte array

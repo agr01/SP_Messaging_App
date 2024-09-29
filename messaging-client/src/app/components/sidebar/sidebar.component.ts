@@ -22,7 +22,7 @@ export class SidebarComponent {
 
   // Formats the key for shortened display in the sidebar
   public formatPublicKey(key: string): string{
-    return this.cryptoService.removePemHeaders(key); 
+    return this.cryptoService.pemToBase64key(key); 
   }
   
 }
