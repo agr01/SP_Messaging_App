@@ -52,7 +52,7 @@ function processHello(connectionId, data, counter, signature) {
 
   // Verify signature
   const concat = JSON.stringify(data) + counter.toString()
-  if (!isValidBase64Signature(publicKey, signature, concat))
+  if (!isValidBase64Signature(signature, publicKey, concat))
     return "Invalid or missing signature";
 
   // Add connection to list of valid clients
