@@ -1,5 +1,5 @@
 import { ChatData } from "./chat"
-import { Hello } from "./Hello"
+import { Hello } from "./hello"
 import { PublicChat } from "./public-chat"
 
 export interface SignedData {

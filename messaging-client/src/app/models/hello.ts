@@ -1,4 +1,4 @@
 export interface Hello {
     type: string    // "server_hello"
-    sender: string  // <server IP connecting>
+    public_key: string  // <server IP connecting>
 }

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { WebSocketService } from './web-socket.service';
 import { catchError, retry, throwError, tap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ClientService } from './client.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,17 +12,22 @@ export class ChatService {
   private messages: string[] = ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     
   ]
-
-  // TODO: put selected user here - selected from sidebar component
-  public selectedUser: string = '';
+ 
 
   constructor(
     private webSocketService: WebSocketService,
+    private clientService: ClientService
   ) { 
 
     // Listen for incoming messages
     this.webSocketService.messageRecieved$.subscribe((message: any) => {
-      this.addMessage(message.message);
+      
+      // TODO: check format
+      // TODO: Validate message (validate signature)
+      if (message.data?.type === "chat"){
+        this.addMessage(message.message);
+      }
+      
     });
     
   }
@@ -42,6 +48,6 @@ export class ChatService {
 
     this.addMessage(message);
 
-    this.webSocketService.sendMessage(message)
+    this.webSocketService.sendAsJson(message)
   }
 }

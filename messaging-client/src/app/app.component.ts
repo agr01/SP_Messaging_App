@@ -20,6 +20,11 @@ export class AppComponent {
    }
 
    async ngOnInit(){
-    await this.cryptoService.generateRsaKeys();
+    try {
+      await this.cryptoService.generateRsaKeys();
+    } catch (error){
+      console.error("Error generating RSA keys: ", error);
+    }
+    
    }
 }
