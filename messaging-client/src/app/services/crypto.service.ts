@@ -140,7 +140,7 @@ export class CryptoService {
      const key = await window.crypto.subtle.generateKey(
         {
             name: "AES-GCM",
-            length: 256 // 32 bytes
+            length: 128 // 16 bytess
         },
         true,
         ["encrypt"]

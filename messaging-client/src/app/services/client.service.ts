@@ -3,7 +3,7 @@ import { WebSocketService } from './web-socket.service';
 import { Hello } from '../models/hello';
 import { ClientListResponse, sanitizeClientListResponse } from '../models/client-list-response';
 import { CryptoService } from './crypto.service';
-import { BehaviorSubject, combineLatestWith, Subscription } from 'rxjs';
+import { BehaviorSubject, combineLatestWith, interval, subscribeOn, Subscription } from 'rxjs';
 import { Client } from '../models/client';
 
 // The initial value of online clients
@@ -27,6 +27,7 @@ export class ClientService implements OnDestroy {
 
   private sendHelloSubscription!: Subscription;
   private messageRecievedSubscription!: Subscription;
+  private resendClientRequestSubscription!: Subscription;
 
   private _onlineClients = new BehaviorSubject(onlineClientsInit)
   public readonly onlineClients$ = this._onlineClients.asObservable();
@@ -54,26 +55,20 @@ export class ClientService implements OnDestroy {
       }
     );
 
+    // Update client list when a new client list is recieved
     this.messageRecievedSubscription = this.webSocketService.messageRecieved$.subscribe(
-      
-      async (message: any) => {
-
-        if (!(message && message.type && message.type === "client_list")) return;
-
-        const clientListResponse = sanitizeClientListResponse(message)
-
-        if (clientListResponse !== null){
-          await this.processClientListResponse(clientListResponse)
-        }
-      }
-
+      this.checkForClientListUpdate
     );
+
+    // Send a client request every 5 seconds
+    this.resendClientRequestSubscription = interval(5000).subscribe(this.sendClientRequest)
 
   }
 
   ngOnDestroy(): void {
     this.sendHelloSubscription.unsubscribe();
     this.messageRecievedSubscription.unsubscribe();
+    this.resendClientRequestSubscription.unsubscribe();
   }
 
   private async sendServerHello(){
@@ -89,6 +84,15 @@ export class ClientService implements OnDestroy {
   private sendClientRequest(){
 
     this.webSocketService.send({ type: "client_list_request"});
+  }
+
+  private async checkForClientListUpdate(message: any){
+    if (!(message && message.type && message.type === "client_list")) return;
+        
+      const clientListResponse = sanitizeClientListResponse(message)
+      if (!clientListResponse) return;
+      
+      await this.processClientListResponse(clientListResponse)
   }
 
   // Replaces the list of online clients with the list of clients in the
