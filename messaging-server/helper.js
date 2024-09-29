@@ -66,13 +66,23 @@ function isValidBase64Signature (signature, publicKey, data) {
 
   try {
     // Create a verification object
-    const verify = crypto.createVerify('sha256');
+    const verify = crypto.createVerify('RSA-SHA256');
     verify.update(data);
     verify.end();
 
     // Verify the base 64 signature
-    isValid = verify.verify(publicKey, signature, 'base64'); 
-    console.log('Signature validation result:', isValid);
+    let key = crypto.createPublicKey(publicKey);
+    const signatureBuffer = Buffer.from(signature, 'base64');
+
+    const isValid = verify.verify(
+      {
+        key: key, 
+        padding: crypto.constants.RSA_PKCS1_PSS_PADDING, 
+        saltLength: 32
+      }
+      , signatureBuffer
+      
+    );    console.log('Signature validation result:', isValid);
     return isValid;
   }
   catch (e) {
