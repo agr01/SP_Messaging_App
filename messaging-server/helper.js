@@ -39,7 +39,7 @@ function parseJson (wsMsg){
 // Checks whether a public key is valid
 function isValidPublicKey(publicKey) {
   // Check for undefined
-  if (signature === undefined) {
+  if (publicKey === undefined) {
     console.log("Public key was undefined");
     return false;
   }

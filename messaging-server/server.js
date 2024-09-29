@@ -40,17 +40,19 @@ const validDataTypes = ["hello", "server_hello", "chat", "public_chat"]
 /* --- Protocol functions --- */
 
 // Processes a data object of type "hello"
-function processHello(connectionId, publicKey, counter, signature) {
+function processHello(connectionId, data, counter, signature) {
   // Check for valid public key
+  const publicKey = data.public_key;
   if (!isValidPublicKey(publicKey))
     return "Invalid or missing public key";
 
   // Verify counter - tracked counter is zero
-  if (!isValidCounter(counter, 0)) 
+  if (!isValidCounter(counter, -1)) 
     return "Invalid or missing counter";
 
   // Verify signature
-  if (!isValidBase64Signature(publicKey, signature, JSON.stringify(data) + counter.toString()))
+  const concat = JSON.stringify(data) + counter.toString()
+  if (!isValidBase64Signature(publicKey, signature, concat))
     return "Invalid or missing signature";
 
   // Add connection to list of valid clients
@@ -72,7 +74,7 @@ function processSignedData (connectionId, payload) {
     console.log("Processing hello message");
     return processHello(
       connectionId, 
-      payload.data.public_key,
+      payload.data,
       payload.counter,
       payload.signature
     );
