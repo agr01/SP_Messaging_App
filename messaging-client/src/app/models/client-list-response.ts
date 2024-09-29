@@ -11,10 +11,16 @@ export interface ClientListResponse {
 
 export function sanitizeClientListResponse(message: any): ClientListResponse | null {
 
-  if (isClientListResponse(message) === null) return null;
+  console.log("Sanitizing client list response");
+
+  if (isClientListResponse(message) === null) {
+    console.log("invalid client list response")
+    return null
+  };
 
   let newMessage = {
-    type: message.type
+    type: message.type,
+    servers: [] as { address: string; clients: string[] }[]
   } as ClientListResponse
 
   for (const server of message.servers){
@@ -27,8 +33,6 @@ export function sanitizeClientListResponse(message: any): ClientListResponse | n
     servers: message.servers
   };
   
-
-  return null;
 }
 
 // Type guard to check if a message is a valid client list response

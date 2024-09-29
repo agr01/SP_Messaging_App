@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { webSocket } from 'rxjs/webSocket';
-import { catchError, retry, throwError, tap, takeUntil, Subject, Observable, NextObserver, BehaviorSubject } from 'rxjs';
+import { catchError, retry, throwError, tap, takeUntil, Subject, Observable, NextObserver, BehaviorSubject, Subscription } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Hello } from '../models/hello';
 import { ChatData } from '../models/chat';
@@ -13,7 +13,7 @@ import { CryptoService } from './crypto.service';
 @Injectable({
   providedIn: 'root',
 })
-export class WebSocketService {
+export class WebSocketService implements OnDestroy {
   // TODO: Change to actual websocket server
   private readonly URL = 'ws://localhost:3000'
 
@@ -41,19 +41,23 @@ export class WebSocketService {
   
   public messageRecieved$ = this.messageReceived.asObservable()
 
+  private webSocketSubscription: Subscription
+  private connectionOpenedSubscription: Subscription
+  private connectionClosedSubscription: Subscription
+
   constructor(
     private cryptoService: CryptoService
   ) {
     
     // Send hello message when connection is opened
-    this.connectionOpened.subscribe(
+    this.connectionOpenedSubscription = this.connectionOpened.subscribe(
       () => {
         this.connectionIsOpen.next(true);
         console.log("connection opened");
       }
     );
 
-    this.connectionClosed.subscribe(
+    this.connectionClosedSubscription = this.connectionClosed.subscribe(
       () => {
         this.connectionIsOpen.next(false);
         console.log("connection closed");
@@ -62,21 +66,25 @@ export class WebSocketService {
     
 
     // Listen for incoming messages with retry and cleanup logic
-    this.webSocketSubject
+    this.webSocketSubscription = this.webSocketSubject
       .pipe(
         retry({ delay: 5000 }), // Retry connection every 5 seconds if it fails
-        catchError((error) => {
-          console.error('WebSocket error:', error);
-          return throwError(() => new Error(error));
-        }),
-        takeUntilDestroyed()
       )
       .subscribe(
         (message: any) => {
+          // TODO: Remove
+          console.log("Recieved message", message)
           this.messageReceived.next(message);
         }
       );
 
+  }
+  ngOnDestroy(): void {
+    console.log("Web socket service destroyed");
+
+    this.webSocketSubscription.unsubscribe();
+    this.connectionOpenedSubscription.unsubscribe();
+    this.connectionClosedSubscription.unsubscribe();
   }
 
 
