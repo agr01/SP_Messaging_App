@@ -1,13 +1,16 @@
 <div class="p-5 font-semibold text-xl text-light-1 min-w-0">Online</div>
 
-<div class="h-20 w-full border-y-dark-4 border-y-2 content-center shadow-sm text-sm px-4 ">
+<div class="h-20 w-full border-y-dark-4 border-y-2 content-center shadow-sm text-sm px-4 "
+[class.bg-slate-700]='this.selectedClients.has("public")'
+(click)='toggleSelectedClient("public")'>
   Public Chat
 </div>
 
 @if(clientService.onlineClients$ | async; as clients){
   @for(client of clients; track client.publicKey){
     
-    <div class="h-20 w-full border-y-dark-4 border-y-2 content-center shadow-sm text-sm px-4 ">
+    <div class="h-20 w-full border-y-dark-4 border-y-2 content-center shadow-sm text-sm px-4 "
+    (click)="toggleSelectedClient(client.publicKey)">
       <div class="flex flex-row w-full h-4">
         <div class="overflow-hidden h-full break-all">
           {{formatPublicKey(client.publicKey)}}

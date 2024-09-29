@@ -11,8 +11,6 @@ export interface ClientListResponse {
 
 export function sanitizeClientListResponse(message: any): ClientListResponse | null {
 
-  console.log("Sanitizing client list response");
-
   if (!isClientListResponse(message)) {
     console.log("invalid client list response")
     return null
