@@ -1,8 +1,24 @@
-
 <div class="p-5 font-semibold text-xl text-light-1 min-w-0">Online</div>
 
+
 @if(clientService.onlineClients$ | async; as clients){
-    @for(client of clients; track client.publicKey){
-        <div class="text-sm p-3 w-full break-words whitespace-normal">{{client.publicKey}}</div>
-    }
+  @for(client of clients; track client.publicKey){
+    
+    <div class="h-20 border-y-dark-4 border-y-2 content-center shadow-sm">
+      <div class="flex flex-row text-sm p-0 w-full h-4 px-4">
+        <div class="overflow-hidden h-full break-all">
+          {{formatPublicKey(client.publicKey)}}
+        </div>
+  
+        <div class="mx-4 text-md">...</div>
+  
+        <div dir="rtl" class="overflow-hidden h-full">
+          {{formatPublicKey(client.publicKey)}}
+        </div>
+  
+      </div>
+    </div>
+    
+
+  }
 }

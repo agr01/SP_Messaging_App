@@ -6,16 +6,9 @@ import { CryptoService } from './crypto.service';
 import { BehaviorSubject, combineLatestWith, Subscription } from 'rxjs';
 import { Client } from '../models/client';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class ClientService implements OnDestroy {
-
-  private sendHelloSubscription!: Subscription;
-  private messageRecievedSubscription!: Subscription;
-
-  public onlineClients: Client[] = [{
-    publicKey: `-----BEGIN PUBLIC KEY-----
+// The initial value of online clients
+const onlineClientsInit: Client[] = [{
+  publicKey: `-----BEGIN PUBLIC KEY-----
 TESTCLIENTkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyIENRUol8p4Gh5FJJwwD
 /vXr9oV+OKdEHwkU0Sm4y6ULfpHHxtF/r7NAaXTmMM0dxpdcN4JT6J1pe7Ycg1xZ
 ylS1Ff2fVc8+HdX+VQhyLP9RuxuWZo0KT9w5/GUsIPuQfbXOM9uakSM972+ZGgwC
@@ -24,10 +17,18 @@ zG91Ykv0QbvdAXGldnKAW0tt+8Wqs2uyquIYxsAc54+SJ2elbE0U5TkjHGPsY/jr
 bC7G8P/wvq2+tdFmQiHEoFDOkcF+akhKqHYV6R996fIWfjDWJYL6EhQ/3OdRn6Us
 OQIDAQAB
 -----END PUBLIC KEY-----`,
-    serverAddress: `localhost:3000`
-  }]
+  serverAddress: `localhost:3000`
+}]
 
-  private _onlineClients = new BehaviorSubject(this.onlineClients)
+@Injectable({
+  providedIn: 'root'
+})
+export class ClientService implements OnDestroy {
+
+  private sendHelloSubscription!: Subscription;
+  private messageRecievedSubscription!: Subscription;
+
+  private _onlineClients = new BehaviorSubject(onlineClientsInit)
   public readonly onlineClients$ = this._onlineClients.asObservable();
 
   constructor(
@@ -102,7 +103,4 @@ OQIDAQAB
     this._onlineClients.next(newClientList);
   }
 
-  public getClients(){
-    return this.onlineClients
-  }
 }
