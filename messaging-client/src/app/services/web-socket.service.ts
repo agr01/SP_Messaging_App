@@ -80,8 +80,8 @@ export class WebSocketService {
   }
 
 
-  sendAsJson(message: any): void {
-    this.webSocketSubject.next(JSON.stringify(message));
+  send(message: any): void {
+    this.webSocketSubject.next(message);
   }
 
   async sendAsData(data: Hello | ChatData | PublicChat ){
@@ -98,7 +98,7 @@ export class WebSocketService {
 
     console.log("sending message: ", message);
     
-    this.sendAsJson(message);
+    this.send(message);
   }
 
   private getCounter(): number{

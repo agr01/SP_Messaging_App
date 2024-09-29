@@ -85,7 +85,7 @@ export class ClientService implements OnDestroy {
 
   private sendClientRequest(){
 
-    this.webSocketService.sendAsJson({ type: "client_list_request"});
+    this.webSocketService.send({ type: "client_list_request"});
   }
 
   // Replaces the list of online clients with the list of clients in the

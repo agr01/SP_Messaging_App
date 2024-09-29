@@ -48,6 +48,6 @@ export class ChatService {
 
     this.addMessage(message);
 
-    this.webSocketService.sendAsJson(message)
+    this.webSocketService.send(message)
   }
 }
