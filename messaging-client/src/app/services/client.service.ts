@@ -57,20 +57,13 @@ export class ClientService implements OnDestroy {
     this.messageRecievedSubscription = this.webSocketService.messageRecieved$.subscribe(
       
       async (message: any) => {
+
+        if (!(message && message.type && message.type === "client_list")) return;
+
         const clientListResponse = sanitizeClientListResponse(message)
 
         if (clientListResponse !== null){
-          this.addClientsFromList(clientListResponse)
-          
-          if (!(await this.containsSelf(clientListResponse))){
-            console.log("Client list does not contain self, resending hello and list request");
-            this.sendServerHello();
-            this.sendClientRequest();
-          }
-          else{
-            console.log("client list contains self");
-            
-          }
+          await this.processClientListResponse(clientListResponse)
         }
       }
 
@@ -100,19 +93,36 @@ export class ClientService implements OnDestroy {
 
   // Replaces the list of online clients with the list of clients in the
   // client list response
-  private addClientsFromList(list: ClientListResponse){
+  // Resends server hello & client request if the client's public key is not in the 
+  // client list response.
+  private async processClientListResponse(list: ClientListResponse){
 
     console.log("Adding clients from: ", list)
 
+    // List to replace old client list
     let newClientList: Client[] = []
 
+    const userPublicKey = await this.cryptoService.getPublicKeyBase64();
+
+    let containsUser = false;
+
+    // Add each user
     for (const server of list.servers){
       for (const client of server.clients){
-        newClientList.push({publicKey: client, serverAddress: server.address})
+        const clientPublicKey = this.cryptoService.pemToBase64key(client);
+        // Do not add self to online client list
+        if (userPublicKey === clientPublicKey){
+          containsUser = true;
+        } else {
+          newClientList.push({publicKey: client, serverAddress: server.address})
+        }
       }
     }
 
-    console.log()
+    if (!containsUser){
+      this.sendServerHello();
+      this.sendClientRequest();
+    }
 
     this._onlineClients.next(newClientList);
   }
