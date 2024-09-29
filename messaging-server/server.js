@@ -9,6 +9,7 @@ const port = process.env.PORT || 3000;
 
 const app = express()
 const server = http.createServer(app);
+
 const wss = new WebSocket.Server({ server });
 
 
@@ -63,31 +64,35 @@ function processHello(connectionId, data, counter, signature) {
 // Processes any requests of the type "signed_data"
 // Returns a string or json string as a reply
 function processSignedData (connectionId, payload) {
-  
+  let reply = {}
+
   // Check for invalid data.type
   const dataType = payload.data.type;
-  if (dataType === undefined || !validDataTypes.includes(dataType))
-    return "Invalid signed_data: data.type is invalid or missing";
+  if (dataType === undefined || !validDataTypes.includes(dataType)) {
+    reply.message = "Invalid signed_data: data.type is invalid or missing";
+    return JSON.stringify(reply);
+  }
+    
   
   // Process client hello message
   if (dataType === "hello") {
     console.log("Processing hello message");
-    return processHello(
+    reply.message = processHello(
       connectionId, 
       payload.data,
       payload.counter,
       payload.signature
     );
+    return JSON.stringify(reply);
   }
-    
-
   else {
     // TODO server hello
 
     // TODO chat
 
     // TODO public_chat
-    return "Not implemented yet";
+    reply.message = "Not implemented yet";
+    return JSON.stringify(reply);
   } 
 }
 
@@ -117,7 +122,7 @@ function processClientListReq (host) {
 
 // Processes requests of the type "client_update_request"
 // Returns a string or json string for websocket reply
-function processClientUpdateReq () {
+function processClientUpdateReq() {
   
   // Prepare client_update 
   let clientUpdate = {};
@@ -142,6 +147,7 @@ function processClientUpdateReq () {
 // Handle messages (including parsing and validation)
 // Handles disconnection
 wss.on('connection', (ws, req) => {
+  ws.isAlive = true;
 
   // Generate a unique ID for each connection and store connection info
   const connectionId = uuidv4(); 
@@ -153,17 +159,22 @@ wss.on('connection', (ws, req) => {
 
   // Listen for messages from the client
   ws.on('message', (message) => {
-    let reply = "";
+
+    let reply = {}
 
     // Check WebSocket message is a json payload
     const payload = parseJson(message);
     if (payload === undefined) {
-      reply = "Invalid message/JSON";
+      reply.message = "Invalid message/JSON";
+      ws.send(JSON.stringify(reply));
+      return;
     }
 
     // Check whether the payload type is valid
     if (payload.type === undefined || !validPayloadTypes.includes(payload.type)) {
-      reply = "Payload type was invalid or missing";
+      reply.message = "Payload type was invalid or missing";
+      ws.send(JSON.stringify(reply));
+      return;
     }
     
     // If payload is of type "signed_data"
@@ -187,15 +198,20 @@ wss.on('connection', (ws, req) => {
 
   // Handle client disconnection
   ws.on('close', () => {
+    
     console.log(`Client ${connectionId} disconnected`);
 
     // Cleanup public keys provided by client
-    if (clients.has(connectionId))
+    if (clients.has(connectionId)){
+      console.log(`Client ${connectionId} removed from client list`);
       clients.delete(connectionId);
-
-    // Cleanup public keys provided by client
-    if (ext_server_conns.has(connectionId))
+    }
+    
+    // Cleanup external server information
+    if (ext_server_conns.has(connectionId)){
+      console.log(`Server ${connectionId} removed from connected servers list`);
       ext_server_conns.delete(connectionId);
+    }
 
     // Cleanup WebSocket connection for client
     connections.delete(connectionId);
