@@ -2,10 +2,23 @@ const crypto = require('crypto')
 
 /* --- Classes --- */
 
-// For storing the information of clients connected to the server
-function ClientInfo(publicKey, counter){
+// For storing the publicKey and counter of all connections on the server
+function ConnectionInfo(publicKey, counter){
   this.publicKey = publicKey;
   this.counter = counter
+}
+
+// Object used in the "client_list" response to store server address and client
+// list informantion. 
+function ServerInfo(address, clients) {
+  this.address = address;
+  this.clients = clients;
+}
+
+// Object used in the creation of "client_list" response
+function ClientList() {
+  this.type = "client_list";
+  this.servers = [];
 }
 
 /* --- Functions --- */
@@ -92,7 +105,9 @@ function isValidCounter(counter, trackedCounter) {
 }
 
 module.exports = {
-  ClientInfo,
+  ConnectionInfo,
+  ServerInfo,
+  ClientList,
   parseJson,
   isValidPublicKey,
   isValidCounter,
