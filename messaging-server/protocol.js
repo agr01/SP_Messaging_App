@@ -7,7 +7,7 @@ const {
   isClient,
   deleteClient,
   addActiveServer,
-  getServer,
+  getActiveServer,
   getActiveServers,
   isActiveServer,
   deleteActiveServer,
@@ -178,6 +178,9 @@ function processSignedData (connectionId, payload) {
       // TODO public_chat
       case "public_chat":
       case "chat":
+        let reply = {}
+        reply.message = "Not Implemented Yet"
+        return JSON.stringify(reply);
   }
 }
 
