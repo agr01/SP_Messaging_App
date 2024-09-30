@@ -6,14 +6,14 @@
         
         <!-- Recieved -->
         <div class="flex justify-start p-2 min-w-0">
-            <div class="px-4 py-1 text-[0.96rem] rounded-3xl bg-dark-5  break-words whitespace-normal max-w-[80%] md:max-w-[65%] 2xl:max-w-[55%]">
+            <div class="px-4 py-1 text-[0.96rem] rounded-3xl accent-2 break-words whitespace-normal max-w-[80%] md:max-w-[65%] 2xl:max-w-[55%]">
                 {{message.message}}
             </div>
         </div>
         
         <!-- Sent -->
         <div class="flex justify-end p-2 min-w-0">
-            <div class="px-4 py-1 text-[0.96rem] rounded-3xl accent break-words whitespace-normal max-w-[80%] md:max-w-[65%] 2xl:max-w-[55%]">
+            <div class="px-4 py-1 text-[0.96rem] rounded-3xl accent-1 break-words whitespace-normal max-w-[80%] md:max-w-[65%] 2xl:max-w-[55%]">
                 {{message.message}}
             </div>
         </div>
@@ -33,7 +33,7 @@
 
     <button 
     (click)="sendMessage()"
-    class="self-end w-min h-min rounded-lg px-5 py-2.5 text-center font-semibold accent accent-hover"
+    class="self-end w-min h-min rounded-lg px-5 py-2.5 text-center font-semibold accent-1 accent-1-hover"
     >
     Send
     </button>

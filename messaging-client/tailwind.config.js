@@ -13,7 +13,7 @@ module.exports = {
         "light-1":"#b0bfe6", //abbeed
         "light-2":"#6c7da7",
 
-        "accent-1":"#6ee6e0",
+        "accent-1":"#e9d5ff",
         "accent-2":"#d8b4fe"
 
       },
