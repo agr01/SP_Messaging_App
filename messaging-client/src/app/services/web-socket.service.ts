@@ -43,11 +43,9 @@ export class WebSocketService {
   constructor(
     private cryptoService: CryptoService
   ) {
-    
-    this.connect();
   }
 
-  private connect(){
+  public connect(){
     
     const url = this.URLs[this.currentUrlIndex];
 

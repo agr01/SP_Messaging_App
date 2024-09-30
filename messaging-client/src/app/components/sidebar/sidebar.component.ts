@@ -34,15 +34,10 @@ export class SidebarComponent implements OnDestroy {
     this.selectedClientSubscription.unsubscribe();
   }
 
-  // Formats the key for shortened display in the sidebar
-  public formatPublicKey(key: string): string{
-    return this.cryptoService.pemToBase64key(key); 
-  }
+  public toggleSelectedClient(clientFingerprint: string){
+    console.log("Toggling", clientFingerprint)
 
-  public toggleSelectedClient(client: string){
-    console.log("Toggling", client)
-
-    this.clientService.toggleSelectedClient(client)
+    this.clientService.toggleSelectedClient(clientFingerprint)
   }
   
   

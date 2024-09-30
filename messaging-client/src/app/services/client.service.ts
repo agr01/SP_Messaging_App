@@ -26,8 +26,7 @@ export class ClientService implements OnDestroy {
     private webSocketService: WebSocketService,
     private cryptoService: CryptoService
   ) { 
-
-
+    
     // Send the server hello message once both the connection is established and the 
     // RSA keys are generated
     this.sendHelloSubscription = 
@@ -38,7 +37,7 @@ export class ClientService implements OnDestroy {
 
         if (webSocketOpen && rsaKeyGenerated){
           console.log("Sending hello");
-          this.sendServerHello();
+          this.sendHello();
           this.sendClientRequest();
         }
 
@@ -57,63 +56,30 @@ export class ClientService implements OnDestroy {
 
   }
 
+  // Deconstructor - Unsubscribes from observables
   ngOnDestroy(): void {
     this.sendHelloSubscription.unsubscribe();
     this.messageRecievedSubscription.unsubscribe();
     this.resendClientRequestSubscription.unsubscribe();
   }
 
-  private async sendServerHello(){
-
+  // Sends a hello message to the server
+  private async sendHello(){
     let helloData = {} as Hello;
 
     helloData.type = "hello";
-    helloData.public_key = await this.cryptoService.getPublicKeyPem();
+    helloData.public_key = await this.cryptoService.getUserPublicKeyPem();
 
     this.webSocketService.sendAsData(helloData);
   }
 
+  // Sends a client list request message to the server
   private sendClientRequest(){
-
     this.webSocketService.send({ type: "client_list_request"});
   }
-
-   // Replaces the list of online clients with the list of clients in the
-  // client list response
-  // Resends server hello & client request if the client's public key is not in the 
-  // client list response.
-  private async processClientListResponse(list: ClientListResponse){
-
-    console.log("Adding clients from: ", list)
-
-    // List to replace old client list
-    let newClientList: Client[] = []
-
-    const userPublicKey = await this.cryptoService.getPublicKeyBase64();
-
-    let containsUser = false;
-
-    // Add each user
-    for (const server of list.servers){
-      for (const client of server.clients){
-        const clientPublicKey = this.cryptoService.pemToBase64key(client);
-        // Do not add self to online client list
-        if (userPublicKey === clientPublicKey){
-          containsUser = true;
-        } else {
-          newClientList.push({publicKey: client, serverAddress: server.address})
-        }
-      }
-    }
-
-    if (!containsUser){
-      this.sendServerHello();
-      this.sendClientRequest();
-    }
-
-    this._onlineClients.next(newClientList);
-  }
-
+  
+  // Checks whether the incoming message is a valid clientListUpdate & calls
+  // process function accordingly
   private async checkForClientListUpdate(message: any){
     if (!(message && message.type && message.type === "client_list")) return;
         
@@ -123,39 +89,73 @@ export class ClientService implements OnDestroy {
       await this.processClientListResponse(clientListResponse)
   }
 
- 
+  // Replaces the list of online clients with the list of clients in the
+  // client list response while ensuring that each client appears only once
+  // Resends server hello & client request if the client's public key is not in the 
+  // client list response.
+  private async processClientListResponse(list: ClientListResponse){
 
-  private async containsSelf(list: ClientListResponse): Promise<boolean>{
-    let ownPublicKey = await this.cryptoService.getPublicKeyBase64()
+    console.log("Adding clients from: ", list)
 
+    // List to replace old client list
+    let newClientList: Client[] = []
+    // set to check whether each client is unique
+    let uniqueClients = new Set<string>();
 
+    const userPublicKey = await this.cryptoService.getUserPublicKeyPem();
+
+    let containsUser = false;
+
+    // Add each client
     for (const server of list.servers){
-      const keyMatch = server.clients.find(client => this.cryptoService.pemToBase64key(client) === ownPublicKey)
-      
-      if (keyMatch){
-        console.log("found match", keyMatch)
-        return true;
+      for (const client of server.clients){
+        
+        const clientPublicKey = this.cryptoService.standardisePem(client);
+        
+        // Do not add self to online client list
+        if (userPublicKey === clientPublicKey){
+          containsUser = true;
+          continue;
+        } 
+        
+        // Do not add duplicate clients
+        if (uniqueClients.has(clientPublicKey)) continue;
+        
+        // Add client
+        uniqueClients.add(clientPublicKey);
+        const fingerprint = await this.cryptoService.getFingerprint(clientPublicKey);
+        newClientList.push({
+          fingerprint: fingerprint,
+          publicKey: clientPublicKey, 
+          serverAddress: server.address
+        })
       }
-
     }
-    
-    return false;
+
+    // Resend hello & client request if clients does not contain sefl
+    if (!containsUser){
+      this.sendHello();
+      this.sendClientRequest();
+    }
+
+    this._onlineClients.next(newClientList);
   }
 
+ 
   // Adds the client to the set of selected if it is not in the set,
   // otherwise removes the client from the set
-  public toggleSelectedClient(client: string){
+  public toggleSelectedClient(clientFingerprint: string){
 
     let selectedClients = this._selectedClientSubject.getValue()
 
     // If setting to public chat, replace all with public
     // A group cannot contain public
-    if (client === "public"){
+    if (clientFingerprint === "public"){
       this._selectedClientSubject.next(new Set(["public"]));
     }
 
     // Check that the client is in the array of online clients
-    if (!this._onlineClients.getValue().find(x => x.publicKey === client)) return;
+    if (!this._onlineClients.getValue().find(x => x.publicKey === clientFingerprint)) return;
 
     // Clear public if it is in the list of selected clients
     // If public is in the list of selected clients it should always be the only selected client
@@ -164,8 +164,8 @@ export class ClientService implements OnDestroy {
     }
 
     // Toggle
-    if (selectedClients.has(client)) selectedClients.delete(client);
-    else selectedClients.add(client);
+    if (selectedClients.has(clientFingerprint)) selectedClients.delete(clientFingerprint);
+    else selectedClients.add(clientFingerprint);
 
     this._selectedClientSubject.next(selectedClients);
   }

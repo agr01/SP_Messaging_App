@@ -1,8 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ChatComponent } from './components/chat/chat.component';
 import { CryptoService } from './services/crypto.service';
+import { combineLatest, combineLatestWith, Subscription } from 'rxjs';
+import { UserService } from './services/user.service';
+import { WebSocketService } from './services/web-socket.service';
 
 @Component({
   selector: 'app-root',
@@ -11,20 +14,36 @@ import { CryptoService } from './services/crypto.service';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+
+  public connecting = true;
+  public settingUpUser = true;
+  private _connectedSubscription = new Subscription
+  private _userReadySubscription = new Subscription
+
   
   constructor(
-    private cryptoService: CryptoService
-  ) {
+    private cryptoService: CryptoService,
+    private userService: UserService,
+    private webSocketService: WebSocketService
+  ) {   }
 
-   }
+   ngOnInit(){
+    
+    this.cryptoService.generateRsaKeys();
+    this.webSocketService.connect();
 
-   async ngOnInit(){
-    try {
-      await this.cryptoService.generateRsaKeys();
-    } catch (error){
-      console.error("Error generating RSA keys: ", error);
-    }
+    // Subscribe to websocket connection status
+    // If ! connected -> show loading spinner
+    this._connectedSubscription = this.webSocketService.connectionIsOpen$.subscribe(
+      (webSocketOpen) => this.connecting = !webSocketOpen
+    )
+
+    // Subscribe to user ready status
+    // If ! user ready -> show loading spinner
+    this._userReadySubscription = this.userService.userReady$.subscribe(
+      (userReady) => this.settingUpUser = !userReady
+    )
     
    }
 }
