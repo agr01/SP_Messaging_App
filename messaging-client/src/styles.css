@@ -14,14 +14,21 @@ body {
 }
 
 .accent-1 {
-  @apply text-dark-1 bg-purple-300
+  background-color: hsl(180, 90%, 24%);
+  /* @apply text-dark-1 */
 }
 
-.accent-1-hover {
-  @apply hover:bg-purple-400
+
+.accent-1-hover:hover{
+  background-color: hsl(180, 90%, 28%);
+  /* @apply bg-purple-400 */
 }
 
 .accent-2 {
-  background-color: #7e95cf;
-  @apply text-dark-1
+  @apply bg-dark-4
+  /* @apply text-dark-1 */
+}
+
+.accent-2-hover:hover{
+  @apply bg-dark-5
 }

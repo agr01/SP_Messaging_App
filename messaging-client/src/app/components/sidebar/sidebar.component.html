@@ -4,7 +4,7 @@
 
 <div class="p-3 space-y-3">
   <div class="recipientSelectBox "
-    [class]='this.selectedClients.has("public") ? "accent-1 accent-1-hover": "bg-dark-3 hover:bg-dark-2"'
+    [class]='this.selectedClients.has("public") ? "accent-1 accent-1-hover": "bg-dark-4 hover:bg-dark-5"'
     (click)='toggleSelectedClient("public")'>
       Public Chat
   </div>
@@ -16,7 +16,7 @@
       <!-- <div class="h-20 w-full border-y-dark-4 border-y-2 content-center shadow-sm text-sm px-4 " -->
  
       <div class="recipientSelectBox bg-dark-3"
-      [class]='this.selectedClients.has(client.fingerprint) ? "accent-1 accent-1-hover": "bg-dark-4 hover:bg-dark-2"'
+      [class]='this.selectedClients.has(client.fingerprint) ? "accent-1 accent-1-hover": "bg-dark-4 hover:bg-dark-5"'
       (click)="toggleSelectedClient(client.fingerprint)">
         
         <div class="flex flex-row w-full h-4">
