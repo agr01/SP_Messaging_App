@@ -111,7 +111,6 @@ function isValidCounter(counter, trackedCounter) {
 module.exports = {
   ClientInfo,
   ServerInfo,
-  ClientList,
   parseJson,
   isValidPublicKey,
   isValidCounter,
