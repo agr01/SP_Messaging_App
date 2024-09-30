@@ -1,0 +1,4 @@
+
+.chat-bubble{
+    @apply px-4 py-1 text-[0.96rem] rounded-3xl break-words whitespace-normal max-w-[80%] md:max-w-[65%] 2xl:max-w-[55%] shadow-lg
+}

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { WebSocketService } from './web-socket.service';
 import { catchError, retry, throwError, tap, Subject, BehaviorSubject } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ClientService } from './client.service';
+import { RecipientService } from './client.service';
 import { CryptoService } from './crypto.service';
 import { PublicChat } from '../models/public-chat';
 import { Client } from '../models/client';
@@ -22,7 +22,6 @@ export class ChatService {
 
   constructor(
     private webSocketService: WebSocketService,
-    private cryptoService: CryptoService,
     private userService: UserService
   ) { 
 
@@ -69,7 +68,7 @@ export class ChatService {
   // Sends a public chat message
   public async sendPublicMessage(message: string){
     // Generate sender fingerprint
-    const userFingerprint = await this.cryptoService.generateUserFingerprint();
+    const userFingerprint = this.userService.getUserFingerprint();
 
     // Send as signed_data
     this.webSocketService.sendAsData({

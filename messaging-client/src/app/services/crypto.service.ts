@@ -166,7 +166,7 @@ export class CryptoService {
   }
 
   // Returns the user's public key in PEM format
-  public async getUserPublicKeyPem(): Promise<string>{
+  public async generateUserPublicKeyPem(): Promise<string>{
 
     if (!this.RsaPssKeyPair) throw new Error("Could not get public key");
 
@@ -250,7 +250,7 @@ export class CryptoService {
   }
 
   public async generateUserFingerprint(): Promise<string>{
-    const userPublicKey = await this.getUserPublicKeyPem();
+    const userPublicKey = await this.generateUserPublicKeyPem();
     return await this.getFingerprint(userPublicKey);
   }
 
