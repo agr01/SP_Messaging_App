@@ -6,10 +6,13 @@ import { CryptoService } from './crypto.service';
 import { BehaviorSubject, combineLatestWith, interval, subscribeOn, Subscription } from 'rxjs';
 import { Client } from '../models/client';
 
+
+// Manages online recipients and recipients selected in the sidebar
+
 @Injectable({
   providedIn: 'root'
 })
-export class ClientService implements OnDestroy {
+export class RecipientService implements OnDestroy {
 
 
   private sendHelloSubscription!: Subscription;
@@ -19,8 +22,8 @@ export class ClientService implements OnDestroy {
   private _onlineClients = new BehaviorSubject<Array<Client>>([])
   public readonly onlineClients$ = this._onlineClients.asObservable();
   
-  private _selectedClientSubject = new BehaviorSubject<Set<string>>(new Set(["public"]));
-  public selectedClients$ = this._selectedClientSubject.asObservable();
+  private _selectedRecipientFingerprintsSubject = new BehaviorSubject<Set<string>>(new Set(["public"]));
+  public selectedRecipientFingerprints$ = this._selectedRecipientFingerprintsSubject.asObservable();
 
   constructor(
     private webSocketService: WebSocketService,
@@ -68,7 +71,7 @@ export class ClientService implements OnDestroy {
     let helloData = {} as Hello;
 
     helloData.type = "hello";
-    helloData.public_key = await this.cryptoService.getUserPublicKeyPem();
+    helloData.public_key = await this.cryptoService.generateUserPublicKeyPem();
 
     this.webSocketService.sendAsData(helloData);
   }
@@ -102,7 +105,7 @@ export class ClientService implements OnDestroy {
     // set to check whether each client is unique
     let uniqueClients = new Set<string>();
 
-    const userPublicKey = await this.cryptoService.getUserPublicKeyPem();
+    const userPublicKey = await this.cryptoService.generateUserPublicKeyPem();
 
     let containsUser = false;
 
@@ -144,14 +147,14 @@ export class ClientService implements OnDestroy {
  
   // Adds the client to the set of selected if it is not in the set,
   // otherwise removes the client from the set
-  public toggleSelectedClient(clientFingerprint: string){
+  public toggleSelectedRecipient(clientFingerprint: string){
 
-    let selectedClients = this._selectedClientSubject.getValue()
+    let selectedClients = this._selectedRecipientFingerprintsSubject.getValue()
 
     // If setting to public chat, replace all with public
     // A group cannot contain public
     if (clientFingerprint === "public"){
-      this._selectedClientSubject.next(new Set(["public"]));
+      this._selectedRecipientFingerprintsSubject.next(new Set(["public"]));
     }
 
     // Check that the client is in the array of online clients
@@ -167,7 +170,29 @@ export class ClientService implements OnDestroy {
     if (selectedClients.has(clientFingerprint)) selectedClients.delete(clientFingerprint);
     else selectedClients.add(clientFingerprint);
 
-    this._selectedClientSubject.next(selectedClients);
+    this._selectedRecipientFingerprintsSubject.next(selectedClients);
+  }
+
+  // BUG - will drop any clients in selected clients that are no longer online
+  // TODO - Fix selected clients so that offline clients are dropped
+  public getSelectedRecipients(): Client[]{
+    const selectedRecipientFingerprints = this._selectedRecipientFingerprintsSubject.value;
+    const onlineClients = this._onlineClients.value;
+
+    let selectedClients = new Array<Client>
+
+    for (const client of onlineClients){
+      if (selectedRecipientFingerprints.has(client.fingerprint)){
+        selectedClients.push(client);
+      }
+    }
+
+    return selectedClients;
+  }
+
+  // Returns true if public is selected as the message recipient
+  public publicRecipientSelected(): boolean{
+    return this._selectedRecipientFingerprintsSubject.value.has("public");
   }
 
 }

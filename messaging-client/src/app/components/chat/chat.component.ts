@@ -1,8 +1,8 @@
 import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { ChatService } from '../../services/chat.service';
 import { FormsModule } from '@angular/forms';
-import { ClientService } from '../../services/client.service';
-import { combineLatestWith, Subscription } from 'rxjs';
+import { RecipientService } from '../../services/client.service';
+import { combineLatestWith, Subscription, take } from 'rxjs';
 import { Chat } from '../../models/chat';
 import { CryptoService } from '../../services/crypto.service';
 import { UserService } from '../../services/user.service';
@@ -23,17 +23,16 @@ export class ChatComponent implements OnDestroy{
 
   constructor(
     private chatService: ChatService,
-    private clientService: ClientService,
-    private cryptoService: CryptoService,
+    private clientService: RecipientService,
     private userService: UserService
   ) { 
     // Send the server hello message once both the connection is established and the 
     // RSA keys are generated
-    this.displayChatSubscription = 
-    this.chatService.messages$.pipe(
-      combineLatestWith(this.clientService.selectedClients$)
+    this.displayChatSubscription = this.chatService.messages$.pipe(
+      combineLatestWith(this.clientService.selectedRecipientFingerprints$)
     ).subscribe(
-      ([messages, selectedClients]) => this.updateDisplayMessages(messages, selectedClients)
+      ([messages, selectedClientFingerprints]) => 
+        this.updateDisplayMessages(messages, selectedClientFingerprints)
     );
   }
 
@@ -69,12 +68,27 @@ export class ChatComponent implements OnDestroy{
   // Trims input & sends message via the chatService
   sendMessage(){
     
+    // Get input text from contenteditable div
     const text = this.inputBox.nativeElement.textContent;
+    
+    // Remove leadin & trailing whitespace
+    const message = text.trim();
+    // Check the message contains content
+    if ( !message || !message.trim().length ) return;
+    
+    // Send message if selected recipient is public
+    if (this.clientService.publicRecipientSelected()){
+      console.log("Sending public message")
+      this.chatService.sendPublicMessage(text);
+    }
 
-    if ( !(text || '').trim().length ) return;
-
-    this.chatService.sendMessage(text.trim(), []);
-
+    // Otherwise send a message to selected clients
+    else{
+      const selectedClients = this.clientService.getSelectedRecipients();
+      this.chatService.sendMessage(message, selectedClients);
+    }
+  
+    // Clear message input field
     this.inputBox.nativeElement.textContent = ""
   }
 

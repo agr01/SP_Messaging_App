@@ -12,3 +12,11 @@ body {
 .direction-rtl {
   direction: rtl
 }
+
+.accent-1 {
+  @apply text-dark-1 bg-purple-300
+}
+
+.accent-1-hover {
+  @apply hover:bg-purple-400
+}

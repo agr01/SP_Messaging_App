@@ -6,14 +6,14 @@
         
         <!-- Recieved -->
         <div class="flex justify-start p-2 min-w-0">
-            <div class="px-4 py-1 text-[0.96rem] rounded-3xl bg-purple-900 break-words whitespace-normal max-w-[80%] md:max-w-[65%] 2xl:max-w-[55%]">
+            <div class="px-4 py-1 text-[0.96rem] rounded-3xl bg-dark-5  break-words whitespace-normal max-w-[80%] md:max-w-[65%] 2xl:max-w-[55%]">
                 {{message.message}}
             </div>
         </div>
         
         <!-- Sent -->
         <div class="flex justify-end p-2 min-w-0">
-            <div class="px-4 py-1 text-[0.96rem] rounded-3xl bg-fuchsia-700 break-words whitespace-normal max-w-[80%] md:max-w-[65%] 2xl:max-w-[55%]">
+            <div class="px-4 py-1 text-[0.96rem] rounded-3xl accent break-words whitespace-normal max-w-[80%] md:max-w-[65%] 2xl:max-w-[55%]">
                 {{message.message}}
             </div>
         </div>
@@ -28,12 +28,12 @@
     #inputBox
     contentEditable="true"
     class="w-full max-w-full break-words whitespace-normal p-2.5 overflow-hidden border text-sm rounded-lg 
-                focus:border-purple-700 focus:outline-none bg-slate-700 border-slate-600 text-white"
+                focus:border-accent-1 focus:outline-none bg-slate-700 border-slate-600 text-white"
     ></div>
 
     <button 
     (click)="sendMessage()"
-    class="self-end w-min h-min rounded-lg px-5 py-2.5 text-center text-white font-semibold bg-violet-900 hover:bg-violet-800"
+    class="self-end w-min h-min rounded-lg px-5 py-2.5 text-center font-semibold accent accent-hover"
     >
     Send
     </button>

@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ClientService } from '../../services/client.service';
+import { RecipientService } from '../../services/client.service';
 import { Client } from '../../models/client';
 import { AsyncPipe } from '@angular/common';
 import { CryptoService } from '../../services/crypto.service';
@@ -18,11 +18,11 @@ export class SidebarComponent implements OnDestroy {
   private selectedClientSubscription: Subscription
 
   constructor(
-    public clientService: ClientService,
+    public clientService: RecipientService,
     private cryptoService: CryptoService
   ) { 
 
-    this.selectedClientSubscription = this.clientService.selectedClients$.subscribe(
+    this.selectedClientSubscription = this.clientService.selectedRecipientFingerprints$.subscribe(
       (c) => {
         this.selectedClients = c
         console.log("Selected clients", this.selectedClients)
@@ -37,7 +37,7 @@ export class SidebarComponent implements OnDestroy {
   public toggleSelectedClient(clientFingerprint: string){
     console.log("Toggling", clientFingerprint)
 
-    this.clientService.toggleSelectedClient(clientFingerprint)
+    this.clientService.toggleSelectedRecipient(clientFingerprint)
   }
   
   

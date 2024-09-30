@@ -27,7 +27,7 @@ export class UserService{
     ).subscribe(
     async (generated)=>{
       this.userFignerprint = await this.cryptoService.generateUserFingerprint();
-      this.userPublicKeyPem = await this.cryptoService.getUserPublicKeyPem();
+      this.userPublicKeyPem = await this.cryptoService.generateUserPublicKeyPem();
       this._userReadySubject.next(true);
     })
 
