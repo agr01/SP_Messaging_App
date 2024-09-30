@@ -1,7 +1,6 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { webSocket } from 'rxjs/webSocket';
-import { catchError, retry, throwError, tap, takeUntil, Subject, Observable, NextObserver, BehaviorSubject, Subscription } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+// import { webSocket } from 'rxjs/webSocket';
+import { retry, Subject, BehaviorSubject, Subscription} from 'rxjs';
 import { Hello } from '../models/hello';
 import { ChatData } from '../models/chat';
 import { PublicChat } from '../models/public-chat';
@@ -10,12 +9,16 @@ import { CryptoService } from './crypto.service';
 
 
 
+
 @Injectable({
   providedIn: 'root',
 })
-export class WebSocketService implements OnDestroy {
+export class WebSocketService {
   // TODO: Change to actual websocket server
   private readonly URL = 'ws://localhost:3000'
+  
+  private readonly URLs = ['ws://localhost:3000', 'ws://localhost:3001']
+  private currentUrlIndex = 0;
 
   // Subjects for message and connection handling
   private connectionOpened = new Subject<Event>()
@@ -25,14 +28,7 @@ export class WebSocketService implements OnDestroy {
   private messageReceived = new Subject<any>()
 
   // Web socket subject
-  private webSocketSubject = webSocket<any>(
-    {
-      url: this.URL,
-      openObserver: this.connectionOpened,
-      closeObserver: this.connectionClosed,
-
-    }
-  )
+  private webSocketSubject: Subject<any> = new Subject
 
   public webSocket$ = this.webSocketSubject.asObservable()
   public connectionOpened$ = this.connectionOpened.asObservable()
@@ -41,55 +37,83 @@ export class WebSocketService implements OnDestroy {
   
   public messageRecieved$ = this.messageReceived.asObservable()
 
-  private webSocketSubscription: Subscription
-  private connectionOpenedSubscription: Subscription
-  private connectionClosedSubscription: Subscription
+
+  private webSocket!: WebSocket; 
 
   constructor(
     private cryptoService: CryptoService
   ) {
-    
-    // Send hello message when connection is opened
-    this.connectionOpenedSubscription = this.connectionOpened.subscribe(
-      () => {
-        this.connectionIsOpen.next(true);
-        console.log("connection opened");
-      }
-    );
-
-    this.connectionClosedSubscription = this.connectionClosed.subscribe(
-      () => {
-        this.connectionIsOpen.next(false);
-        console.log("connection closed");
-      }
-    );
-    
-
-    // Listen for incoming messages with retry and cleanup logic
-    this.webSocketSubscription = this.webSocketSubject
-      .pipe(
-        retry({ delay: 5000 }), // Retry connection every 5 seconds if it fails
-      )
-      .subscribe(
-        (message: any) => {
-          // TODO: Remove
-          console.log("Recieved message", message)
-          this.messageReceived.next(message);
-        }
-      );
-
-  }
-  ngOnDestroy(): void {
-    console.log("Web socket service destroyed");
-
-    this.webSocketSubscription.unsubscribe();
-    this.connectionOpenedSubscription.unsubscribe();
-    this.connectionClosedSubscription.unsubscribe();
   }
 
+  public connect(){
+    
+    const url = this.URLs[this.currentUrlIndex];
 
-  send(message: any): void {
-    this.webSocketSubject.next(message);
+    console.log(`Connecting to ${url}`);
+
+    this.webSocket = new WebSocket(url);
+
+    this.webSocket.onopen = () => {
+      console.log(`Connected to ${url}`);
+      this.connectionIsOpen.next(true);
+    };
+
+
+    this.webSocket.onmessage = (event) => {
+      
+      try {
+        const message = JSON.parse(event.data);
+        console.log("Recieved message", message)
+        this.messageReceived.next(message); 
+      } catch (error) {
+        console.error(`Error parsing websocket message\nMessage: "${event.data}"\nError:`, error)
+      }
+      
+    };
+
+    this.webSocket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    this.webSocket.onclose = (event) => {
+      console.log(`WebSocket closed: ${event.code}, reason: ${event.reason}`);
+      this.connectionIsOpen.next(false);
+      this.reconnect(); // Attempt to reconnect
+    };
+  }
+
+  // Tries to establish a websocket connection with a different server
+  // If an attempt to connect has been made to all servers, waits 5 seconds before trying to reconnect
+  private reconnect() {
+    
+    // set server url to next server
+    this.currentUrlIndex = (this.currentUrlIndex + 1) % this.URLs.length;
+
+    // If all servers tried -> reconnect with timeout
+    if (this.currentUrlIndex == 0){
+      console.log("Reconnect after 5 seconds...")
+      setTimeout(() => this.connect(), 5000); // Retry after 5 seconds
+    }
+
+    // otherwise try new server immediately
+    else {
+      console.log("Reconnecting...")
+      this.connect();
+    }
+  }
+
+
+  send(message: any) {
+
+    if(!this.webSocket || this.webSocket.readyState !== WebSocket.OPEN){
+      console.error("Could not send websocket message");
+      return
+    }
+    
+    // TODO: REMOVE
+    console.log("sending message: ", message);
+
+    this.webSocket.send(JSON.stringify(message));
   }
 
   async sendAsData(data: Hello | ChatData | PublicChat ){
@@ -103,8 +127,6 @@ export class WebSocketService implements OnDestroy {
     let dataToSign = JSON.stringify(data) + message.counter.toString();
 
     message.signature = await this.cryptoService.signRsa(dataToSign);
-
-    console.log("sending message: ", message);
     
     this.send(message);
   }

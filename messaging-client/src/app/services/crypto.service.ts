@@ -140,7 +140,7 @@ export class CryptoService {
      const key = await window.crypto.subtle.generateKey(
         {
             name: "AES-GCM",
-            length: 256 // 32 bytes
+            length: 128 // 16 bytess
         },
         true,
         ["encrypt"]
@@ -166,8 +166,8 @@ export class CryptoService {
   }
 
   // Returns the user's public key in PEM format
-  public async getPublicKeyPem(): Promise<string>{
-    
+  public async getUserPublicKeyPem(): Promise<string>{
+
     if (!this.RsaPssKeyPair) throw new Error("Could not get public key");
 
     // Export the public key to SPKI format
@@ -177,35 +177,44 @@ export class CryptoService {
     );
 
     // Convert the SPKI ArrayBuffer to a Base64 string
-    const base64String = Buffer.from(publicKey).toString('base64') 
+    const base64Key = Buffer.from(publicKey).toString('base64');
 
-    return await this.cryptoKeyToPem(base64String);
+    return await this.addPemHeaders(base64Key);
   }
 
-  // Converts a base64 key to a PEM string
-  private async cryptoKeyToPem(key: string): Promise<string> {
+  // Ensures that incoming pem keys contain no whitespace between the headers
+  public standardisePem(key: string): string{
 
+    // Remove pem headers and all whitespace
+    key = this.pemToBase64key(key);
+    // Adds pem headers back
+    key = this.addPemHeaders(key);
+
+    return key;
+  }
+
+  // Adds PEM headders to a base64 key
+  private addPemHeaders(base64key: string): string {
 
     let pem = "-----BEGIN PUBLIC KEY-----\n";
-    
-    // Split in lines of 64 characters
-    pem += (key.match(/.{1,64}/g) ?? []).join('\n'); 
-
+    pem += base64key; 
     pem += "\n-----END PUBLIC KEY-----";
 
     return pem;
   }
 
-  public removePemHeaders(pem: string): string{
+  // Removes pem headers and all whitespace leaving only the base64 key
+  private pemToBase64key(pem: string): string{
     return pem.replace(/-----BEGIN PUBLIC KEY-----/g, '')
-            .replace(/-----END PUBLIC KEY-----/g, '');
+            .replace(/-----END PUBLIC KEY-----/g, '')
+            .replace(/[\r\n]+/g, '');
   }
 
   
   private async pemToCryptoKey(pem: string) {
     
     // Remove the PEM header, footer & whitespace
-    const pemFormatted = this.removePemHeaders(pem)
+    const pemFormatted = this.pemToBase64key(pem)
                               .replace(/\s+/g, ''); 
 
     // Decode the Base64 string to a byte array
@@ -230,6 +239,19 @@ export class CryptoService {
     );
   
     return cryptoKey;
+  }
+
+  public async getFingerprint(publicKeyPem: string): Promise<string>{ 
+    const data = new TextEncoder().encode(publicKeyPem);
+
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+
+    return Buffer.from(hashBuffer).toString('base64')
+  }
+
+  public async generateUserFingerprint(): Promise<string>{
+    const userPublicKey = await this.getUserPublicKeyPem();
+    return await this.getFingerprint(userPublicKey);
   }
 
 }
