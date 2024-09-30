@@ -15,7 +15,6 @@ import { CryptoService } from './crypto.service';
 })
 export class WebSocketService {
   // TODO: Change to actual websocket server
-  private readonly URL = 'ws://localhost:3000'
   
   private readonly URLs = ['ws://localhost:3000', 'ws://localhost:3001']
   private currentUrlIndex = 0;

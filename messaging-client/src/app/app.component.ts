@@ -6,11 +6,12 @@ import { CryptoService } from './services/crypto.service';
 import { combineLatest, combineLatestWith, Subscription } from 'rxjs';
 import { UserService } from './services/user.service';
 import { WebSocketService } from './services/web-socket.service';
+import { HeaderComponent } from './components/header/header.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, ChatComponent],
+  imports: [RouterOutlet, SidebarComponent, ChatComponent, HeaderComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
