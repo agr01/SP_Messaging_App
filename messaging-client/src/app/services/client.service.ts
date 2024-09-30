@@ -158,7 +158,7 @@ export class RecipientService implements OnDestroy {
     }
 
     // Check that the client is in the array of online clients
-    if (!this._onlineClients.getValue().find(x => x.publicKey === clientFingerprint)) return;
+    if (!this._onlineClients.getValue().find(x => x.fingerprint === clientFingerprint)) return;
 
     // Clear public if it is in the list of selected clients
     // If public is in the list of selected clients it should always be the only selected client

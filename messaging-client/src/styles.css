@@ -14,14 +14,20 @@ body {
 }
 
 .accent-1 {
-  background-color: hsl(180, 90%, 24%);
+  /* background-color: hsl(180, 90%, 24%);  */
+  background-color: hsl(336, 56%, 43%);
   /* @apply text-dark-1 */
 }
 
 
 .accent-1-hover:hover{
-  background-color: hsl(180, 90%, 28%);
+  /* background-color: hsl(180, 90%, 28%); */
+  background-color: hsl(336, 58%, 48%);
   /* @apply bg-purple-400 */
+}
+
+.text-accent-1{
+  color: hsl(336, 58%, 48%);
 }
 
 .accent-2 {

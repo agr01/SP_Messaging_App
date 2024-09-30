@@ -24,7 +24,7 @@ export class ChatComponent implements OnDestroy{
   constructor(
     private chatService: ChatService,
     private clientService: RecipientService,
-    private userService: UserService
+    public userService: UserService
   ) { 
     // Send the server hello message once both the connection is established and the 
     // RSA keys are generated
@@ -36,21 +36,15 @@ export class ChatComponent implements OnDestroy{
     );
   }
 
+  // Sets the value of displayChats, filtering chat messeges based on the selected particilpant(s)
   private updateDisplayMessages(messages: Chat[], selectedClients: Set<string>){
     console.log("updating displayed messages", messages, selectedClients);
 
     this.displayChats = messages.filter(
       (message)=>{
-        console.log("Checking message", message)
         for (const participant of message.participants){
-          console.log("checking participant", participant)
-
           const participantIsSelected = selectedClients.has(participant);
-          console.log("Participant is selected", participantIsSelected);
-
           const participantIsUser = participant == this.userService.getUserFingerprint()
-          console.log("Participant is user", participantIsUser)
-
           if (!participantIsSelected && !participantIsUser){
             return false;
           }

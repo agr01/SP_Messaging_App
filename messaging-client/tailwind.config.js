@@ -13,8 +13,7 @@ module.exports = {
         "light-1":"#b0bfe6", //abbeed
         "light-2":"#6c7da7",
 
-        "accent-1":"hsl(180, 60%, 70%)",
-        "accent-2":"#d8b4fe"
+        "accent-1":"hsl(336, 56%, 43%)",
 
       },
     }, 

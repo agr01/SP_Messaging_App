@@ -1,3 +1,3 @@
 .recipientSelectBox{
-    @apply h-20 w-full rounded-lg border-y-dark-4 border-y-2 content-center shadow-sm text-sm px-4 cursor-pointer
+    @apply h-20 w-full rounded-lg shadow-lg content-center shadow-sm text-sm px-4 cursor-pointer
 }
