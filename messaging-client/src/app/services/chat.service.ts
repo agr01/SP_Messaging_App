@@ -6,10 +6,13 @@ import { RecipientService } from './client.service';
 import { CryptoService } from './crypto.service';
 import { PublicChat, sanitizePublicChat } from '../models/public-chat';
 import { Client } from '../models/client';
-import { Chat, ChatData } from '../models/chat';
+import { ChatData, sanitizeChatData } from '../models/chat-data';
 import { UserService } from './user.service';
 import { ChatMessage } from '../models/chat-message';
 import { AesEncryptedData } from '../models/aes-encrypted-data';
+import { MAX_GROUP_CHAT_SIZE } from '../constants';
+import { parseJson } from '../helpers/conversion-functions';
+import { Chat, sanitizeChat } from '../models/chat';
 
 
 @Injectable({
@@ -72,9 +75,59 @@ export class ChatService {
     this.addMessage(this.publicChatToChatMessage(publicChat))
   }
 
-  // TODO: Implement
-  private processChat(message: any){
-    console.error("Chat processing not implemented");
+  
+  // TODO: Add group chat limit to readme
+  // Note: This client restricts the max group size to limit resources
+  // spent on attempting to decrypt symm_keys
+  private async processChat(message: any){
+    const chatData = sanitizeChatData(message);
+    if (!chatData) return;
+    
+    // Decrypt message
+   
+    let aesKey = ""
+    let decryptedChatString = ""
+    let decryptedChat = null
+    let i = 0
+    // Attempt to decrypt each encryptied aes key
+    while(i < MAX_GROUP_CHAT_SIZE && i < chatData.symm_keys.length){
+      try {
+        aesKey = await this.cryptoService.decryptRsa(chatData.symm_keys[i])
+      } catch (error) {
+        console.error("Error decrypting aes key", error)
+      }
+
+      // Use decrypted aes key to decrypt message
+      decryptedChatString = await this.cryptoService.decryptAes(aesKey, chatData.iv, chatData.chat);
+      
+      // Attempt to json parse decrypted message
+      // The message decrypted using the correct aes key should be a json string
+      decryptedChat = parseJson(decryptedChatString)
+      // If json is successfully parsed - assume the aes key has been successfully decrypted
+      if (decryptedChat !== null) break;
+    }
+
+    if (!decryptedChat){
+      console.log("Could not decrypt chat message", chatData)
+      return;
+    }
+
+    // Sanitize decrypted Chat
+    const chat = sanitizeChat(decryptedChat);
+    if (!chat) return;
+
+    // Add message to chat messages
+    this.addMessage(this.chatToChatMessage(chat));
+  }
+
+  private chatToChatMessage(c: Chat): ChatMessage{
+
+    return {
+      sender: c.participants.at(0) ?? "", // Checked in sanitizeChat
+      recipients: c.participants.slice(1),
+      isPublic: false,
+      message: c.message
+    }
   }
 
   // Adds a message to the messages subject & emits to observers

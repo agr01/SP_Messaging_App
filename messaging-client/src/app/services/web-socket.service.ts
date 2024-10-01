@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Subject, BehaviorSubject} from 'rxjs';
 import { Hello } from '../models/hello';
-import { ChatData } from '../models/chat';
+import { ChatData } from '../models/chat-data';
 import { PublicChat } from '../models/public-chat';
 import { SignedData } from '../models/signed-data';
 import { CryptoService } from './crypto.service';

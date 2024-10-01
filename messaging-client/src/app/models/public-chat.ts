@@ -1,4 +1,4 @@
-import { isFingerprint, isNotEmptyString } from "../helpers/validators";
+import { isFingerprint, isNonEmptyString } from "../helpers/validators";
 
 export interface PublicChat {
     type: string // "public_chat"
@@ -8,8 +8,6 @@ export interface PublicChat {
 
 export function sanitizePublicChat(obj: any): PublicChat | null{
     
-    if (!obj || !obj.type || !obj.sender || !obj.message) return null;
-
     if (!isClientListResponse(obj)) return null;
 
     return {
@@ -26,7 +24,7 @@ function isClientListResponse(obj: any): boolean{
 
     if (!isFingerprint(obj.sender)) return false;
 
-    if (!isNotEmptyString(obj.message)) return false;
+    if (!isNonEmptyString(obj.message)) return false;
 
     return true;
 }

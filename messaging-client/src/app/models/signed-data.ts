@@ -1,4 +1,4 @@
-import { ChatData } from "./chat"
+import { ChatData } from "./chat-data"
 import { Hello } from "./hello"
 import { PublicChat } from "./public-chat"
 

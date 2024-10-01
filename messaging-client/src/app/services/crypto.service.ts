@@ -3,13 +3,27 @@ import {Buffer} from 'buffer';
 import { BehaviorSubject } from 'rxjs';
 import { AesEncryptedData } from '../models/aes-encrypted-data';
 
+const AES_ALG = "AES-GCM"
+const AES_KEY_LENGTH_BITS = 128
+const AES_AUTH_TAG_BITS = 128
+
+const RSA_SIZE_BITS = 2048
+
+const RSA_ENCRYPT_ALG = "RSA-OAEP"
+const RSA_ENCRYPT_EXPONENT = new Uint8Array([0x01, 0x00, 0x01]); // 65537
+const RSA_ENCRYPT_HASH = "SHA-256" 
+
+const RSA_SIGN_ALG = "RSA-PSS"
+const RSA_SIGN_SALT_LENGTH_BYTES = 32
+const RSA_SIGN_HASH = "SHA-256"
+
 @Injectable({
   providedIn: 'root'
 })
 export class CryptoService {
 
-  private RsaPssKeyPair: CryptoKeyPair | undefined
-  private RsaOaepKeyPair: CryptoKeyPair | undefined
+  private _rsaPssKeyPair: CryptoKeyPair | undefined
+  private _rsaOaepKeyPair: CryptoKeyPair | undefined
   
   // Emits when RSA keys are generated
   // Used to send server hello only when both the keys are generated and the connection is open
@@ -26,27 +40,27 @@ export class CryptoService {
     console.log("random values: ", randomValues);
     
     // Generate PSS Keys
-    this.RsaPssKeyPair = await window.crypto.subtle.generateKey(
+    this._rsaPssKeyPair = await window.crypto.subtle.generateKey(
       {
-        name: 'RSA-PSS',
-        modulusLength: 2048,
-        publicExponent: new Uint8Array([0x01, 0x00, 0x01]), // 65537
-        hash: 'SHA-256',
+        name: RSA_SIGN_ALG,
+        modulusLength: RSA_SIZE_BITS,
+        publicExponent: RSA_ENCRYPT_EXPONENT, // 65537
+        hash: RSA_SIGN_HASH,
       },
       true,
       ['sign', 'verify']
     );
 
-    var pssPublicKey = await window.crypto.subtle.exportKey("spki", this.RsaPssKeyPair.publicKey);
-    var pssPrivateKey = await window.crypto.subtle.exportKey("pkcs8", this.RsaPssKeyPair.privateKey);
+    var pssPublicKey = await window.crypto.subtle.exportKey("spki", this._rsaPssKeyPair.publicKey);
+    var pssPrivateKey = await window.crypto.subtle.exportKey("pkcs8", this._rsaPssKeyPair.privateKey);
 
     // Duplicate to generate OAEP Keys
     let rsaOaepPublicKey = await window.crypto.subtle.importKey(
       "spki",
       pssPublicKey,
       {
-        name: 'RSA-OAEP',
-        hash: 'SHA-256'
+        name: RSA_ENCRYPT_ALG,
+        hash: RSA_ENCRYPT_HASH
       },
       true,
       ['encrypt']
@@ -56,14 +70,14 @@ export class CryptoService {
       "pkcs8",
       pssPrivateKey,
       {
-        name: 'RSA-OAEP',
-        hash: 'SHA-256'
+        name: RSA_ENCRYPT_ALG,
+        hash: RSA_ENCRYPT_HASH
       },
       true,
       ['decrypt']
     );
     
-    this.RsaOaepKeyPair = {privateKey: rsaOaepPrivateKey, publicKey: rsaOaepPublicKey}
+    this._rsaOaepKeyPair = {privateKey: rsaOaepPrivateKey, publicKey: rsaOaepPublicKey}
     
     // TODO: Remove
     console.log(`generated keys`)
@@ -79,7 +93,7 @@ export class CryptoService {
 
     const uint8Message = new TextEncoder().encode(data);
     const encrypted = await window.crypto.subtle.encrypt(
-      { name: 'RSA-OAEP' },
+      { name: RSA_ENCRYPT_ALG },
       publicKey,
       uint8Message
     );
@@ -91,7 +105,7 @@ export class CryptoService {
   // Returns a base64 encoded signature
   public async signRsa(data: string): Promise<string>{
     
-    if (!this.RsaPssKeyPair?.privateKey) throw new Error("Could not sign message");
+    if (!this._rsaPssKeyPair?.privateKey) throw new Error("Could not sign message");
 
     try {
       // sign hash using RSA-PSS
@@ -99,10 +113,10 @@ export class CryptoService {
       
       const signature = await window.crypto.subtle.sign(
         { 
-          name: "RSA-PSS",
-          saltLength: 32
+          name: RSA_SIGN_ALG,
+          saltLength: RSA_SIGN_SALT_LENGTH_BYTES
         },
-        this.RsaPssKeyPair.privateKey,
+        this._rsaPssKeyPair.privateKey,
         uint8Message
       );
 
@@ -118,12 +132,12 @@ export class CryptoService {
   // Decrypt message using RSA private key
   public async decryptRsa(encryptedMessage: string): Promise<string> {
 
-    if (!this.RsaOaepKeyPair) throw new Error("Could not encrypt message");
+    if (!this._rsaOaepKeyPair) throw new Error("Could not encrypt message");
 
     const decodedMessage = Uint8Array.from(atob(encryptedMessage), c => c.charCodeAt(0));
     const decrypted = await window.crypto.subtle.decrypt(
-      { name: 'RSA-OAEP' },
-      this.RsaOaepKeyPair.privateKey,
+      { name: RSA_ENCRYPT_ALG },
+      this._rsaOaepKeyPair.privateKey,
       decodedMessage
     );
 
@@ -148,8 +162,8 @@ export class CryptoService {
       // Generate a random 32-byte key
       key = await window.crypto.subtle.generateKey(
         {
-            name: "AES-GCM",
-            length: 128 // 16 bytes
+            name: AES_ALG,
+            length: AES_KEY_LENGTH_BITS
         },
         true,
         ["encrypt"]
@@ -166,9 +180,9 @@ export class CryptoService {
     try {
       ciphertextBuff = await window.crypto.subtle.encrypt(
           {
-              name: "AES-GCM",
+              name: AES_ALG,
               iv: iv,
-              tagLength: 128 // 16 bytes for authentication tag
+              tagLength: AES_AUTH_TAG_BITS
           },
           key,
           encodedText
@@ -197,32 +211,68 @@ export class CryptoService {
       
   }
 
+  public async decryptAes(base64Key: string, base64iv: string, base64CipherText: string): Promise<string>{
+    
+    try {
+      const ivBuffer = this.base64toUint8Array(base64iv);
+      const cipherTextBuffer = this.base64toUint8Array(base64CipherText);
+
+      const key = await this.base64AesToCryptoKey(base64Key);
+
+      const decryptedBuffer = await window.crypto.subtle.decrypt(
+        {
+          name: AES_ALG,
+          iv: ivBuffer,
+          tagLength: AES_AUTH_TAG_BITS
+        },
+        key,
+        cipherTextBuffer
+      );
+
+      return new TextDecoder().decode(decryptedBuffer);
+      
+    } catch (error) {
+      console.error("Error decrypting aes key", error)
+      throw error
+    }
+    
+  }
+
+  private async base64AesToCryptoKey(base64Key: string): Promise<CryptoKey>{
+    
+    try {
+      const keyBuffer = this.base64toUint8Array(base64Key).buffer;
+
+      return await window.crypto.subtle.importKey(
+        "raw",
+        keyBuffer,
+        { name: AES_ALG },
+        false,
+        ["decrypt"]
+      );
+      
+    } catch (error) {
+      console.error("Failed to convert aes to crypto key");
+      throw error
+    }
+    
+  }
+
   // Returns the user's public key in PEM format
   public async generateUserPublicKeyPem(): Promise<string>{
 
-    if (!this.RsaPssKeyPair) throw new Error("Could not get public key");
+    if (!this._rsaPssKeyPair) throw new Error("Could not get public key");
 
     // Export the public key to SPKI format
     const publicKey = await window.crypto.subtle.exportKey(
       "spki",  
-      this.RsaPssKeyPair.publicKey
+      this._rsaPssKeyPair.publicKey
     );
 
     // Convert the SPKI ArrayBuffer to a Base64 string
     const base64Key = Buffer.from(publicKey).toString('base64');
 
     return await this.addPemHeaders(base64Key);
-  }
-
-  // Ensures that incoming pem keys contain no whitespace between the headers
-  public standardisePem(key: string): string{
-
-    // Remove pem headers and all whitespace
-    key = this.pemToBase64key(key);
-    // Adds pem headers back
-    key = this.addPemHeaders(key);
-
-    return key;
   }
 
   // Adds PEM headders to a base64 key
@@ -239,35 +289,29 @@ export class CryptoService {
   private pemToBase64key(pem: string): string{
     return pem.replace(/-----BEGIN PUBLIC KEY-----/g, '')
             .replace(/-----END PUBLIC KEY-----/g, '')
-            .replace(/[\r\n]+/g, '');
+            .replace(/[\r\n]+/g, '')
+            .replace(/\s+/g, '');
   }
 
   
   private async pemToCryptoKey(pem: string) {
     
     // Remove the PEM header, footer & whitespace
-    const pemFormatted = this.pemToBase64key(pem)
-                              .replace(/\s+/g, ''); 
+    const pemFormatted = this.pemToBase64key(pem); 
 
-    // Decode the Base64 string to a byte array
-    // Source: https://www.geeksforgeeks.org/convert-base64-string-to-arraybuffer-in-javascript/
-    const binaryString = window.atob(pemFormatted);
-    const bytes = new Uint8Array(binaryString.length);
-    
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
+    // Convert base64 key to array buffer
+    const keyBuffer = this.base64toUint8Array(pemFormatted).buffer
   
-    // Import the key
+    // Import key
     const cryptoKey = await window.crypto.subtle.importKey(
-      'spki', // Format
-      bytes.buffer, // The key in ArrayBuffer format
+      'spki', 
+      keyBuffer, 
       {
-        name: 'RSA-OAEP',
-        hash: 'SHA-256' // The hash function
+        name: RSA_ENCRYPT_ALG,
+        hash: RSA_ENCRYPT_HASH
       },
-      true, // Extractable
-      ['encrypt'] // Key usage
+      true, 
+      ['encrypt']
     );
   
     return cryptoKey;
@@ -285,4 +329,16 @@ export class CryptoService {
     return await this.getFingerprint(userPublicKey);
   }
 
+  // Decode the Base64 string to a byte array
+  // Source: https://www.geeksforgeeks.org/convert-base64-string-to-arraybuffer-in-javascript/
+  public base64toUint8Array(base64string: string): Uint8Array{
+    const binaryString = window.atob(base64string);
+    const bytes = new Uint8Array(binaryString.length);
+    
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    return bytes
+  }
 }
