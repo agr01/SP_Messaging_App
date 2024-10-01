@@ -81,7 +81,7 @@ wss.on('connection', (ws, req) => {
     
     // If payload is of type "signed_data"
     if (payload.type === "signed_data") {
-      reply = processSignedData(connectionId, payload);
+      reply = processSignedData(connectionId, payload, host);
     }
 
     // If payload is of type "client_list_request"

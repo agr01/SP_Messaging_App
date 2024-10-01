@@ -235,9 +235,28 @@ function forwardPublicChat(connectionId, payload) {
 // Checks if a "chat" message is valid
 // Return false if any validation fail; true otherwise
 function isValidChat(connectionId, data, counter, signature) {
-  let publicKey;
-  let trackedCounter;
+ 
+  // Check the destination_servers is an array and ensure it contains data
+  const dests = data.destination_servers;
+  if (!(dests instanceof Array) || dests.length === 0) {
+    console.log("Data field destination_servers was invalid, missing or empty");
+    return false;
+  }
 
+  // Check the symm_keys is an array and ensure it contains right amount of data
+  const symmKeys = data.symm_keys;
+  if (!(symmKeys instanceof Array) || symmKeys.length >= dests.length) {
+    console.log("Data field symm_keysi was invalid, missing or empty");
+    return false;
+  }
+
+  // Unable to validate counter and signature forwarded messages 
+  if (isActiveServer(connectionId)) {
+    console.log("Chat is message forwarded from other server. Stopping signature and counter validation");
+    return true;
+  }
+  
+  let publicKey, trackedCounter;
   // Ensure that sender is connected to the network in a valid way
   if (isClient(connectionId)) {
     
@@ -263,16 +282,21 @@ function isValidChat(connectionId, data, counter, signature) {
 
 // Forwards the "chat" payload to relevant connected clients and servers
 // except the sender
-function forwardChat(connectionId, payload, dests) {
-  // For each client currently connected to the server, distribute the public message
-  const otherClients = getClients(); 
-  otherClients.forEach((_, otherConnId) => { 
-    // If sender is a client, ensure public message is not sent back
-    if (otherConnId !== connectionId) {
-      let ws = getConnection(otherConnId);
-      ws.send(JSON.stringify(payload));
-    }
-  });
+function forwardChat(connectionId, host, payload) {
+  const dests = payload.data.destination_servers;
+
+  // Don't send chat to other clients unless destinations includes host
+  if (dests.includes(host)) {
+    // For each client currently connected to the server, distribute the message
+    const otherClients = getClients(); 
+    otherClients.forEach((_, otherConnId) => { 
+      // If sender is a client, ensure public message is not sent back
+      if (otherConnId !== connectionId) {
+        let ws = getConnection(otherConnId);
+        ws.send(JSON.stringify(payload));
+      }
+    });
+  }
 
   // For each server currently connected to this server
   const activeServers = getActiveServers();
@@ -288,7 +312,7 @@ function forwardChat(connectionId, payload, dests) {
 
 // Processes any requests of the type "signed_data"
 // Returns json string if there is a reply; otherwise undefined
-function processSignedData (connectionId, payload) {
+function processSignedData (connectionId, payload, host) {
 
   // Check for invalid data.type
   const dataType = payload.data.type;
@@ -302,7 +326,7 @@ function processSignedData (connectionId, payload) {
     case "hello":
       console.log("Processing hello message");
       let message = processHello(
-        connectionId, 
+        connectionId,
         payload.data,
         payload.counter,
         payload.signature
@@ -340,25 +364,21 @@ function processSignedData (connectionId, payload) {
           payload.signature)
         ) {
           // Only forward public chat if message is valid
-          forwardPublicChat(connectionId, payload);
+          forwardChat(connectionId, host, payload);
         } 
         return;
 
       case "chat":
-        // // 
-        // if (isActiveServer(connectionId)) {
-          
-        // }
-        // // Validate the chat is a valid message from one connected clients
-        // else if (isValidChat(
-        //   connectionId,
-        //   payload.data,
-        //   payload.counter,
-        //   payload.signature)
-        // ) {
-        //   // Only forward public chat if message is valid
-        //   forwardChat(connectionId, payload);
-        // } 
+        // Validate the chat is a valid message from one connected clients
+        if (isValidChat(
+          connectionId,
+          payload.data,
+          payload.counter,
+          payload.signature)
+        ) {
+          // Only forward public chat if message is valid
+          forwardChat(connectionId, host, payload);
+        } 
         return;
   }
 }
