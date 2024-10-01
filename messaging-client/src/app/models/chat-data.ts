@@ -1,4 +1,4 @@
-import { isBase64String, isNonEmptyString, isNonEmptyStringArray } from "../helpers/validators"
+import { isNonEmptyString, isNonEmptyStringArray } from "../helpers/validators"
 
 export interface ChatData {
   type: string                    // "chat"
@@ -20,7 +20,7 @@ export function sanitizeChatData(obj: any): ChatData | null{
   }
 }
 
-function isChatData(obj: any): boolean{
+export function isChatData(obj: any): boolean{
   if (!obj 
     || !obj.type
     || !obj.destination_servers
@@ -33,12 +33,11 @@ function isChatData(obj: any): boolean{
 
   if (!isNonEmptyStringArray(obj.destination_servers)) return false;
 
-  if (!isNonEmptyString(obj.iv) || !isBase64String(obj.iv)) return false;
+  if (!isNonEmptyString(obj.iv)) return false;
 
   if (!isNonEmptyStringArray(obj.sym_keys)) return false;
-  if (!obj.sym_keys.every((key: any)=>isBase64String(key))) return false;
 
-  if (!isNonEmptyString(obj.chat) || !isBase64String(obj.chat)) return false;
+  if (!isNonEmptyString(obj.chat)) return false;
 
   return true;
 }

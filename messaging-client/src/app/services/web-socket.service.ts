@@ -108,36 +108,5 @@ export class WebSocketService {
     this.webSocket.send(JSON.stringify(message));
   }
 
-  async sendAsSignedData(data: Hello | ChatData | PublicChat ){
-
-    let message = {} as SignedData;
-
-    message.type = "signed_data"
-    message.counter = this.getCounter()
-    message.data = data;
-
-    let dataToSign = JSON.stringify(data) + message.counter.toString();
-
-    message.signature = await this.cryptoService.signRsa(dataToSign);
-    
-    this.send(message);
-  }
-
-  private getCounter(): number{
-    
-    if (localStorage.getItem("counter") === null){
-      localStorage.setItem("counter", "0");
-      return 0;
-    }
-
-    // Return as a number
-    return parseInt(localStorage.getItem("counter") ?? "0");
-  }
-
-
-  private incrementCounter(){
-    let counter = parseInt(localStorage.getItem("counter") ?? "0");
-    counter++
-    localStorage.setItem("counter", counter.toString());
-  }
+ 
 }

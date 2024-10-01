@@ -1,17 +1,23 @@
 <!-- Messages container -->
-<div class="flex flex-col h-full overflow-auto p-10">
+<div class="flex flex-col h-full overflow-auto p-12">
 
   @for (chatMessage of getDisplayMessages(); track chatMessage;){
 
     <!-- Recieved -->
     @if (chatMessage.sender !== this.userService.getUserFingerprint()) {
-    <div class="flex flex-col justify-start p-2 min-w-0">
-      <div class="chat-bubble-container">
-        <div class="text-sm px-3 py-1 w-full truncate">{{chatMessage.sender}}</div>
-        <div class="accent-2 chat-bubble">
-          {{chatMessage.message}}
+    
+      <div class="flex flex-col justify-start pb-4 min-w-0">
+
+      
+      <div class="flex">
+        <div class="accent-2 chat-bubble chat-bubble-container">
+          <div class="text-[.75rem] text-gray-400 w-full truncate pb-1">
+            {{chatMessage.sender}}
+          </div>
+          <div>{{chatMessage.message}}</div>
         </div>
       </div>
+      
     </div>
     }
     @else {
