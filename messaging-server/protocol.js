@@ -246,8 +246,8 @@ function isValidChat(connectionId, data, counter, signature) {
 
   // Check the symm_keys is an array and ensure it contains right amount of data
   const symmKeys = data.symm_keys;
-  if (!(symmKeys instanceof Array) || symmKeys.length >= dests.length) {
-    console.log("Data field symm_keysi was invalid, missing or empty");
+  if (!(symmKeys instanceof Array) || symmKeys.length < dests.length) {
+    console.log("Data field symm_keys was invalid, missing or empty");
     return false;
   }
 
@@ -286,6 +286,7 @@ function isValidChat(connectionId, data, counter, signature) {
 function forwardChat(connectionId, host, payload) {
   const dests = payload.data.destination_servers;
 
+  console.log(`Checking whether host ${host} is included`)
   // Don't send chat to other clients unless destinations includes host
   if (dests.includes(host)) {
     // For each client currently connected to the server, distribute the message
@@ -294,6 +295,7 @@ function forwardChat(connectionId, host, payload) {
       // If sender is a client, ensure public message is not sent back
       if (otherConnId !== connectionId) {
         let ws = getConnection(otherConnId);
+        console.log(`Forwarding chat to ${connectionId}`);
         ws.send(JSON.stringify(payload));
       }
     });
@@ -306,6 +308,7 @@ function forwardChat(connectionId, host, payload) {
     // Ensure that message is only sent to relevant servers
     if (serverConnId !== connectionId && dests.includes(serverInfo.address)) {
       let ws = getConnection(serverConnId);
+      console.log(`Sending to active server ${serverInfo.address} connection ${connectionId}`);
       ws.send(JSON.stringify(payload));
     }
   });
@@ -373,6 +376,7 @@ function processSignedData (connectionId, payload, host) {
 
       case "chat":
         // Validate the chat is a valid message from one connected clients
+        console.log("Processing chat message");
         if (isValidChat(
           connectionId,
           payload.data,
@@ -380,6 +384,7 @@ function processSignedData (connectionId, payload, host) {
           payload.signature)
         ) {
           // Only forward public chat if message is valid
+          console.log("Forwarding chat");
           forwardChat(connectionId, host, payload);
         } 
         return;

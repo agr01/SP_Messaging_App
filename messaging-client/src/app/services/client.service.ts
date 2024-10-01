@@ -52,8 +52,9 @@ export class RecipientService implements OnDestroy {
       message => this.checkForClientListUpdate(message)
     );
 
+    // TODO: PUT BACK to 5 secs
     // Send a client request every 5 seconds
-    this.resendClientRequestSubscription = interval(5000).subscribe(
+    this.resendClientRequestSubscription = interval(30000).subscribe(
       ()=>this.sendClientRequest()
     )
 

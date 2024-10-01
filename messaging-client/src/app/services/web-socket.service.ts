@@ -57,7 +57,8 @@ export class WebSocketService {
         console.log("Recieved message", message)
         this.messageReceived.next(message); 
       } catch (error) {
-        console.error(`Error parsing websocket message\nMessage: "${event.data}"\nError:`, error)
+        console.error(`Error parsing websocket message\nError:`, error)
+        console.error("Could not parse:", event.data)
       }
       
     };
