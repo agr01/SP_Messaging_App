@@ -128,6 +128,7 @@ function processServerHello(connectionId, data, counter, signature) {
   
   // Check whether sender field is valid
   const sender = data.sender;
+  console.log(`Sender field: ${data.sender}`);
   if (sender === undefined || typeof(sender) !== "string") {
     console.log("Invalid or missing sender field");
     return false;
@@ -430,35 +431,37 @@ function processClientListReq (host) {
 function processClientUpdate(connectionId, publicKeys) {
   
   // Check whether there is active server
-  const activeServer = getActiveServer(connectionId);
+  let activeServer = getActiveServer(connectionId);
   if (activeServer === undefined) {
-    console.log(`Could not find active server for ${connectionId}, exiting`);
+    console.log(`Could not find active server for ${connectionId}, resending server_hello`);
     return false;
   }
 
   // Check whether publicKeys is an array
-  if (!publicKeys instanceof Array) {
+  if (publicKeys === undefined || !publicKeys instanceof Array) {
     console.log(`Parsed data clients was not an array, defaulting to empty`);
     return false;
   }
 
   // Ensure all of the publicKeys are valid public keys in the correct format
-  let updateClientInfos = [];
-  publicKeys.forEach((publicKey) => {
-    // Filter out any invalid public keys
-    if(!isValidPublicKey(publicKey)) {
-      return;
-    }
+  let updateClientInfos = []; 
+  if (publicKeys.length > 0) {
+    publicKeys.forEach((publicKey) => {
+      // Filter out any invalid public keys
+      if(!isValidPublicKey(publicKey)) {
+        return;
+      }
 
-    // Add new clientInfo to the active server 
-    updateClientInfos.push(
-      new ClientInfo(publicKey, activeServer.getCounter(publicKey))
-    );
-  }); 
+      // Add new clientInfo to the active server 
+      updateClientInfos.push(
+        new ClientInfo(publicKey, activeServer.getCounter(publicKey))
+      );
+    }); 
+  }
   
   // Update the active server map value
-  activeServer.clientInfos = result;
-  setActiveServer(connectionId, activeServer);
+  activeServer.clientInfos = updateClientInfos;
+  upsertActiveServer(connectionId, activeServer);
   return true;
 }
 

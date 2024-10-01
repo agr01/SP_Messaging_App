@@ -55,7 +55,7 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 // List of valid payload types that can be received
-const validPayloadTypes = ["signed_data", "client_list_request", "client_update_request"]
+const validPayloadTypes = ["signed_data", "client_list_request", "client_update_request", "client_update"]
 
 /* --- WebSocket Connection and Event Handling --- */
 
@@ -67,7 +67,9 @@ function setupWebSocketEvents(ws, host, type, connectionId) {
     ws.on("open", () => {
       console.log("Successfully established connection to server");
       // generate server hello
-      ws.send(JSON.stringify(generateServerHello()));
+      let serverHello = 
+      
+      ws.send(JSON.stringify(generateServerHello(host)));
 
       // Send a client update request
       ws.send(JSON.stringify(generateClientUpdateReq()));
@@ -87,7 +89,7 @@ function setupWebSocketEvents(ws, host, type, connectionId) {
 
     // Check whether the payload type is valid
     if (payload.type === undefined || !validPayloadTypes.includes(payload.type)) {
-      console("Payload type was invalid or missing");
+      console.log("Payload type was invalid or missing");
       return;
     }
     
@@ -102,16 +104,16 @@ function setupWebSocketEvents(ws, host, type, connectionId) {
     }
 
     // If payload is of type "client_update_request"
-    if (payload.type === "client_update_request") {
+    if (payload.type === "client_update_request") { 
       reply = JSON.stringify(generateClientUpdate());
     }
 
     // If payload is of type "client_update"
     if (payload.type === "client_update") {
-      let success = processClientUpdate(connectionId);
+      let success = processClientUpdate(connectionId, payload.clients);
       if (!success) {
-        console.log("Server sent a bad client_update, closing the connection");
-        ws.close();
+        console.log(`Failure with client update. Retrying "server_hello"`);
+        ws.send(JSON.stringify(generateServerHello(host)));
       }
     }
 
@@ -206,7 +208,7 @@ server.listen(port, () => {
 });
 
 setupNeighbourhood();
-joinNeighbourhood(wss.address());
+joinNeighbourhood();
 
 // app.get('/', function (req, res) {
 //   res.send('Hello World')
