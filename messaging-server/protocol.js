@@ -416,7 +416,7 @@ function processClientListReq (host) {
     clientList.servers.push(
       new ServerClientList(
         activeServerInfo.address,
-        activeServerInfo.map(client => client.publicKey)
+        activeServerInfo.clients.map(client => client.publicKey)
       )
     );
   });
