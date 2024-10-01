@@ -1,18 +1,54 @@
-const crypto = require('crypto')
+const crypto = require('crypto');
 
 /* --- Classes --- */
 
-// For storing the publicKey and counter of 
-function ClientInfo(publicKey, counter){
-  this.publicKey = publicKey;
-  this.counter = counter;
+// For storing the publicKey and counter of an active client
+class ClientInfo {
+  constructor(publicKey, counter) {
+    this.publicKey = publicKey;
+    this.counter = counter;
+    this.fingerprint = generateFingerprint(publicKey);
+  }
 }
 
-// Object used in the "client_list" response to store server address and client
-// list informantion. 
-function ServerInfo(address, clients) {
-  this.address = address;
-  this.clients = clients;
+// Object used for storing the server address and an arry of ClientInfo objects
+// of an active server
+class ActiveServerInfo {
+
+  constructor(address, clientInfos) {
+    this.address = address;
+    this.clientInfos = clientInfos;
+  }
+
+  // Gets the counter of an client connected to an active server or returns a
+  // default base value. Attempts to find the counter using the client's public key
+  // Returns counter of found client; defaults to -1
+  getClientCounter(publicKey) {
+    // Attempts to find client
+    let client = this.clientInfos.find(clientInfo =>
+      clientInfo.publicKey === publicKey
+    );
+    
+    // Returns counter if found
+    if (client !== undefined) {
+      return client.counter;
+    }
+
+    // Defaults to -1 (new counter)
+    return -1;
+  }
+
+  getPublicKeyUsingFingerprint(fingerprint) {
+    let client = this.clientInfos.find(clientInfo =>
+      clientInfo.fingerprint === fingerprint
+    );
+
+    if (client !== undefined) {
+      return client.publicKey;
+    } 
+
+    return undefined;
+  }
 }
 
 /* --- Helper Functions --- */
@@ -29,6 +65,13 @@ function parseJson (wsMsg){
 
   return;
 }
+
+// Generate SHA-256 Fingerprint
+function generateFingerprint(publicKey) {
+  const encoder = new TextEncoder();
+  utf8bytes = encoder.encode(publicKey);
+  return crypto.createHash('sha256').update(utf8bytes).digest('base64');
+} 
 
 // Checks whether a public key is valid
 function isValidPublicKey(publicKey) {
@@ -67,7 +110,6 @@ function isValidBase64Signature (signature, publicKey, data) {
     // Verify the base 64 signature
     let key = crypto.createPublicKey(publicKey);
     const signatureBuffer = Buffer.from(signature, 'base64');
-
     const isValid = verify.verify(
       {
         key: key, 
@@ -77,6 +119,7 @@ function isValidBase64Signature (signature, publicKey, data) {
       , signatureBuffer
       
     );    console.log('Signature validation result:', isValid);
+
     return isValid;
   }
   catch (e) {
@@ -108,9 +151,12 @@ function isValidCounter(counter, trackedCounter) {
   return true;
 }
 
+// Function to genarate a fingerprint 
+
+
 module.exports = {
   ClientInfo,
-  ServerInfo,
+  ActiveServerInfo,
   parseJson,
   isValidPublicKey,
   isValidCounter,
