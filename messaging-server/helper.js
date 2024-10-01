@@ -1,8 +1,9 @@
 const crypto = require('crypto');
+const { getPrivateKey } = require('./server-state');
 
 /* --- Classes --- */
 
-// For storing the publicKey and counter of an active client
+// For storing the publicKey, counter and fingerprint of an active client
 class ClientInfo {
   constructor(publicKey, counter) {
     this.publicKey = publicKey;
@@ -38,11 +39,17 @@ class ActiveServerInfo {
     return -1;
   }
 
+  // Gets the matching publicKey for the fingerprint
+  // Return a publicKey as a string if a matching client can be found; 
+  // undefined otherwise
   getPublicKeyUsingFingerprint(fingerprint) {
+    
+    // Attempt to find matching fingerprint
     let client = this.clientInfos.find(clientInfo =>
       clientInfo.fingerprint === fingerprint
     );
 
+    // If found, return clients public key
     if (client !== undefined) {
       return client.publicKey;
     } 
@@ -71,7 +78,32 @@ function generateFingerprint(publicKey) {
   const encoder = new TextEncoder();
   utf8bytes = encoder.encode(publicKey);
   return crypto.createHash('sha256').update(utf8bytes).digest('base64');
-} 
+}
+
+// Generates an RSA-SHA256 signature
+// Return a base 64 encoded signature of the data
+function generateSignature(data) {
+  
+  privateKeyString = getPrivateKey();
+  // Encode private key in UTF8 bytes
+  encoder = new TextEncoder();
+  const privateKey = encoder.encode(privateKeyString);
+  
+  // Generate signature
+  const signer = crypto.createSign('RSA-SHA256');
+  signer.update(data);
+  signer.end();
+  const signature = signer.sign(
+    {
+      key: privateKey, 
+      padding: crypto.constants.RSA_PKCS1_PSS_PADDING, 
+      saltLength: 32
+    }, 
+    'base64'
+  );
+
+  return signature;
+}
 
 // Checks whether a public key is valid
 function isValidPublicKey(publicKey) {
@@ -115,11 +147,11 @@ function isValidBase64Signature (signature, publicKey, data) {
         key: key, 
         padding: crypto.constants.RSA_PKCS1_PSS_PADDING, 
         saltLength: 32
-      }
-      , signatureBuffer
-      
-    );    console.log('Signature validation result:', isValid);
-
+      }, 
+      signatureBuffer
+    );
+    
+    console.log('Signature validation result:', isValid);
     return isValid;
   }
   catch (e) {
@@ -151,14 +183,12 @@ function isValidCounter(counter, trackedCounter) {
   return true;
 }
 
-// Function to genarate a fingerprint 
-
-
 module.exports = {
   ClientInfo,
   ActiveServerInfo,
   parseJson,
   isValidPublicKey,
   isValidCounter,
-  isValidBase64Signature
+  isValidBase64Signature,
+  generateSignature
 }

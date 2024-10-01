@@ -14,7 +14,8 @@ const {
   getNeighbourhoodServerPublicKey,
   isInNeighbourhood,
   getConnection,
-  addConnection
+  addConnection,
+  getAndIncreaseCounter
 } = require("./server-state.js");
 
 const { 
@@ -23,7 +24,8 @@ const {
   parseJson,
   isValidCounter,
   isValidBase64Signature,
-  isValidPublicKey
+  isValidPublicKey,
+  generateSignature
 } = require('./helper.js');
 
 // List of valid data types within a "signed_data" payload
@@ -481,10 +483,24 @@ function generateClientUpdateReq() {
   return new ClientUpdateRequest();
 }
 
+// Generates a server_hello signed_data payload
+// Returns signed_data payload with server_hello data
+function generateServerHello(host) {
+  const serverHello = new ServerHelloData(host);
+  const counter = getAndIncreaseCounter();
+  const concat = JSON.stringify(serverHello) + counter.toString(); 
+  return new SignedData(
+    serverHello,
+    counter,
+    generateSignature(concat)
+  );
+}
+
 module.exports = {
   processSignedData,
   processClientListReq,
   processClientUpdate,
   generateClientUpdate,
-  generateClientUpdateReq
+  generateClientUpdateReq,
+  generateServerHello
 }

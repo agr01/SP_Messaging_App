@@ -16,6 +16,11 @@ const active_servers = new Map();
 // key: value -> address (ip address): public_key
 const neighbourhood = new Map();
 
+// Server RSA keys in PEM format
+const keys = { publicKey: "", privateKey: "" };
+
+var counter = 0;
+
 /* --- Server State support functions --- */
 
 /* --- Functions for connections  --- */
@@ -111,15 +116,50 @@ function deleteActiveServer(connectionId) {
 
 // Gets the corresponding Websocket for a connectionId
 // Returns: reference to Websocket connection
+function getNeighbourhood() {
+  return neighbourhood;
+}
+
+// Gets the public keey for a corresponding neighbourhood address
+// Returns: publicKey string
 function getNeighbourhoodServerPublicKey(address) {
   return neighbourhood.get(address);
 }
+
+// Add servers to the neighbourhood
+function insertNeighbourhoodServer(address, publicKey) {
+  neighbourhood.set(address, publicKey);
+}
+
 
 // Check if neighbourhood contains address
 // Returns: true if address is in neighbourhood; false otherwise
 function isInNeighbourhood(address) {
   return neighbourhood.has(address);
 }
+
+// Initialise the public and private keys in the server variable
+function initialiseKeys() {
+  keys.publicKey = process.env.PUBLIC_KEY || "";
+  keys.privateKey = process.env.PRIVATE_KEY || "";
+}
+
+// Returns the servers publicKey
+function getPublicKey() {
+  return keys.publicKey;
+}
+
+// Returns the servers privateKey
+function getPrivateKey() {
+  return keys.privateKey;
+}
+
+// Returns server counter
+function getAndIncreaseCounter() {
+  counter += 1;
+  return counter-1;
+}
+
 
 module.exports = {
   addConnection,
@@ -136,6 +176,12 @@ module.exports = {
   getActiveServers,
   isActiveServer,
   deleteActiveServer,
+  getNeighbourhood,
   getNeighbourhoodServerPublicKey,
-  isInNeighbourhood
+  insertNeighbourhoodServer,
+  isInNeighbourhood,
+  initialiseKeys,
+  getPublicKey,
+  getPrivateKey,
+  getAndIncreaseCounter
 }
