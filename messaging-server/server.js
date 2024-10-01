@@ -103,8 +103,10 @@ wss.on('connection', (ws, req) => {
       }
     }
 
-    console.log(`Sending reply ${reply} to ${connectionId}`);
-    ws.send(reply);
+    if (reply !== undefined) {
+      console.log(`Sending message reply for ${payload.type} to ${connectionId}`);
+      ws.send(reply);
+    }
   });
 
   // Handle client disconnection

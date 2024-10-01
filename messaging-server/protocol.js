@@ -165,7 +165,7 @@ function isValidPublicChat(connectionId, data, counter, signature) {
   const fingerprint = data.sender;
 
   // Ensure that fingerprint is not missing and is a string
-  if (type(fingerprint) !== "string") {
+  if (typeof(fingerprint) !== "string") {
     console.log("Sender was invalid type or missing");
     return false;
   }
@@ -217,6 +217,7 @@ function forwardPublicChat(connectionId, payload) {
     // If sender is a client, ensure public message is not sent back
     if (otherConnId !== connectionId) {
       let ws = getConnection(otherConnId);
+      console.log(`Sending public chat ${JSON.stringify(payload)} to ${connectionId}`)
       ws.send(JSON.stringify(payload));
     }
   });
@@ -357,6 +358,7 @@ function processSignedData (connectionId, payload, host) {
 
       // Process public_chat message
       case "public_chat":
+        console.log("Processing public chat");
         if (isValidPublicChat(
           connectionId,
           payload.data,
@@ -364,7 +366,8 @@ function processSignedData (connectionId, payload, host) {
           payload.signature)
         ) {
           // Only forward public chat if message is valid
-          forwardChat(connectionId, host, payload);
+          console.log("Forwarding public chat");
+          forwardPublicChat(connectionId, payload);
         } 
         return;
 
