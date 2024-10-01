@@ -5,6 +5,7 @@ import { ClientListResponse, sanitizeClientListResponse } from '../models/client
 import { CryptoService } from './crypto.service';
 import { BehaviorSubject, combineLatestWith, interval, subscribeOn, Subscription } from 'rxjs';
 import { Client } from '../models/client';
+import { SignedDataService } from './signed-data.service';
 
 
 // Manages online recipients and recipients selected in the sidebar
@@ -27,7 +28,8 @@ export class RecipientService implements OnDestroy {
 
   constructor(
     private webSocketService: WebSocketService,
-    private cryptoService: CryptoService
+    private cryptoService: CryptoService,
+    private signedDataService: SignedDataService
   ) { 
     
     // Send the server hello message once both the connection is established and the 
@@ -54,7 +56,7 @@ export class RecipientService implements OnDestroy {
 
     // TODO: PUT BACK to 5 secs
     // Send a client request every 5 seconds
-    this.resendClientRequestSubscription = interval(30000).subscribe(
+    this.resendClientRequestSubscription = interval(10000).subscribe(
       ()=>this.sendClientRequest()
     )
 
@@ -74,7 +76,7 @@ export class RecipientService implements OnDestroy {
     helloData.type = "hello";
     helloData.public_key = await this.cryptoService.generateUserPublicKeyPem();
 
-    this.webSocketService.sendAsSignedData(helloData);
+    this.signedDataService.sendAsSignedData(helloData);
   }
 
   // Sends a client list request message to the server
@@ -166,7 +168,11 @@ export class RecipientService implements OnDestroy {
     }
 
     // Toggle
-    if (selectedClients.has(clientFingerprint)) selectedClients.delete(clientFingerprint);
+    if (selectedClients.has(clientFingerprint)) {
+      selectedClients.delete(clientFingerprint);
+      // If selected clients is empty - default to public
+      if (selectedClients.size < 1) selectedClients.add("public")
+    }
     else selectedClients.add(clientFingerprint);
 
     this._selectedRecipientFingerprintsSubject.next(selectedClients);

@@ -1,4 +1,4 @@
-import { isFingerprint, isNonEmptyString, isNonEmptyStringArray } from "../helpers/validators";
+import { isNonEmptyString, isNonEmptyStringArray } from "../helpers/validators";
 
 export interface Chat {
   participants: string[]  // "<Fingerprint of sender comes first>", "<Fingerprints of recipients>",
@@ -19,7 +19,7 @@ function isChat(obj: any){
 
   if (!isNonEmptyStringArray(obj.participants) || obj.participants.length < 2) return false;
 
-  if (!obj.participants.every((p: any) => isFingerprint(p))) return false;
+  if (!isNonEmptyStringArray(obj.participants)) return false;
 
   if (!isNonEmptyString(obj.message)) return false;
 

@@ -1,4 +1,4 @@
-import { isBase64String, isNonEmptyString, isNonEmptyStringArray } from "../helpers/validators"
+import { isNonEmptyString, isNonEmptyStringArray } from "../helpers/validators"
 
 export interface ChatData {
   type: string                    // "chat"
@@ -20,25 +20,72 @@ export function sanitizeChatData(obj: any): ChatData | null{
   }
 }
 
-function isChatData(obj: any): boolean{
+// export function isChatData(obj: any): boolean{
+//   if (!obj 
+//     || !obj.type
+//     || !obj.destination_servers
+//     || !obj.iv
+//     || !obj.symm_keys
+//     || !obj.chat
+//   ) return false;
+
+//   if (obj.type != "chat") return false;
+
+//   if (!isNonEmptyStringArray(obj.destination_servers)) return false;
+
+//   if (!isNonEmptyString(obj.iv)) return false;
+
+//   if (!isNonEmptyStringArray(obj.symm_keys)) return false;
+
+//   if (!isNonEmptyString(obj.chat)) return false;
+
+//   return true;
+// }
+
+// TODO: change to quiet
+export function isChatData(obj: any): boolean {
   if (!obj 
     || !obj.type
     || !obj.destination_servers
     || !obj.iv
     || !obj.symm_keys
     || !obj.chat
-  ) return false;
+  ) {
+    console.log("Failed initial property existence check:", {
+      obj,
+      type: obj?.type,
+      destination_servers: obj?.destination_servers,
+      iv: obj?.iv,
+      symm_keys: obj?.symm_keys,
+      chat: obj?.chat
+    });
+    return false;
+  }
 
-  if (obj.type != "chat") return false;
+  if (obj.type != "chat") {
+    console.log("Type check failed: Expected 'chat', got", obj.type);
+    return false;
+  }
 
-  if (!isNonEmptyStringArray(obj.destination_servers)) return false;
+  if (!isNonEmptyStringArray(obj.destination_servers)) {
+    console.log("Destination servers validation failed: Not a non-empty string array", obj.destination_servers);
+    return false;
+  }
 
-  if (!isNonEmptyString(obj.iv) || !isBase64String(obj.iv)) return false;
+  if (!isNonEmptyString(obj.iv)) {
+    console.log("IV validation failed: Not a non-empty string", obj.iv);
+    return false;
+  }
 
-  if (!isNonEmptyStringArray(obj.sym_keys)) return false;
-  if (!obj.sym_keys.every((key: any)=>isBase64String(key))) return false;
+  if (!isNonEmptyStringArray(obj.symm_keys)) {
+    console.log("Symmetric keys validation failed: Not a non-empty string array", obj.symm_keys);
+    return false;
+  }
 
-  if (!isNonEmptyString(obj.chat) || !isBase64String(obj.chat)) return false;
+  if (!isNonEmptyString(obj.chat)) {
+    console.log("Chat validation failed: Not a non-empty string", obj.chat);
+    return false;
+  }
 
   return true;
 }

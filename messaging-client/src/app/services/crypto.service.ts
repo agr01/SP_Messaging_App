@@ -34,10 +34,6 @@ export class CryptoService {
 
   // Generate RSA Keys
   public async generateRsaKeys(): Promise<void> {
-
-    const randomValues = new Uint8Array(16);
-    window.crypto.getRandomValues(randomValues);
-    console.log("random values: ", randomValues);
     
     // Generate PSS Keys
     this._rsaPssKeyPair = await window.crypto.subtle.generateKey(

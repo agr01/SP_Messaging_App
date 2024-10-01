@@ -13,6 +13,7 @@ import { AesEncryptedData } from '../models/aes-encrypted-data';
 import { MAX_GROUP_CHAT_SIZE } from '../constants';
 import { parseJson } from '../helpers/conversion-functions';
 import { Chat, sanitizeChat } from '../models/chat';
+import { SignedDataService } from './signed-data.service';
 
 
 @Injectable({
@@ -29,7 +30,8 @@ export class ChatService {
   constructor(
     private webSocketService: WebSocketService,
     private cryptoService: CryptoService,
-    private userService: UserService
+    private userService: UserService,
+    private signedDataService: SignedDataService
   ) { 
 
     // TODO: Remove
@@ -46,6 +48,18 @@ export class ChatService {
         isPublic: true,
         message: "Public message from me"
       })
+      this.addMessage({
+        sender: "DByaiKOyEu1ZPe75A66HBSkR+a4NFoKTlnO7UeJaVpQ=",
+        recipients: [],
+        isPublic: true,
+        message: "a regular msg"
+      })
+      this.addMessage({
+        sender: "DByaiKOyEu1ZPe75A66HBSkR+a4NFoKTlnO7UeJaVpQ=",
+        recipients: [],
+        isPublic: true,
+        message: "a"
+      })
     
 
     // Listen for incoming messages
@@ -55,22 +69,30 @@ export class ChatService {
     
   }
 
-  private processMessage(message: any){
+  private async processMessage(message: any){
     if (!message) return;
     
-    if (message.type == "public_chat"){
-      this.processPublicChat(message);
+    console.log("processing message", message)
+    const data = await this.signedDataService.processSignedData(message);
+    if (!data) return;
+    console.log("processed signed data")
+
+    if (data.type == "public_chat"){
+      this.processPublicChat(data);
     }
 
-    if (message.type == "chat"){
-      this.processChat(message);
+    if (data.type == "chat"){
+      this.processChat(data);
     }
   }
 
   // Sanitize public chat message & add to messages
   private processPublicChat(message: any){
+    console.log("Processing public chat", message);
     const publicChat = sanitizePublicChat(message);
     if (!publicChat) return;
+
+    console.log("Adding public chat to messages")
 
     this.addMessage(this.publicChatToChatMessage(publicChat))
   }
@@ -80,6 +102,7 @@ export class ChatService {
   // Note: This client restricts the max group size to limit resources
   // spent on attempting to decrypt symm_keys
   private async processChat(message: any){
+    console.log("Processing chat", message)
     const chatData = sanitizeChatData(message);
     if (!chatData) return;
     
@@ -152,7 +175,7 @@ export class ChatService {
     // Encrypt chat using AES
     const aesRes: AesEncryptedData = await this.cryptoService.encryptAES(JSON.stringify(chat));
 
-    // Add sym_keys & dest server for each participant
+    // Add symm_keys & dest server for each participant
     let encryptedAesKeys: string[] = []
     let destServerSet = new Set<string>
 
@@ -173,9 +196,17 @@ export class ChatService {
       symm_keys: encryptedAesKeys,
       chat: aesRes.cipherText
     }
+    
+    // Add to messages array
+    this.addMessage({
+      sender: this.userService.getUserFingerprint(),
+      recipients: recipients.map(r => r.fingerprint),
+      message: message,
+      isPublic: false
+    })
 
     // Send as signed data
-    this.webSocketService.sendAsSignedData(chatData);
+    this.signedDataService.sendAsSignedData(chatData);
   }
 
   // Creates a chat object given a message and array of recipients
@@ -200,7 +231,7 @@ export class ChatService {
     const userFingerprint = this.userService.getUserFingerprint();
 
     // Send as signed_data
-    this.webSocketService.sendAsSignedData({
+    this.signedDataService.sendAsSignedData({
       type: "public_chat",
       sender: userFingerprint,
       message: message
