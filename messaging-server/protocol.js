@@ -1,12 +1,12 @@
 const {
   getConnections,
   deleteConnection,
-  addClient,
+  upsertClient,
   getClient,
   getClients,
   isClient,
   deleteClient,
-  addActiveServer,
+  upsertActiveServer,
   getActiveServer,
   getActiveServers,
   isActiveServer,
@@ -19,7 +19,7 @@ const {
 
 const { 
   ClientInfo,
-  ServerInfo,
+  ActiveServerInfo,
   parseJson,
   isValidCounter,
   isValidBase64Signature,
@@ -38,31 +38,68 @@ function ClientUpdate() {
 }
 
 // Object used in the generation of "client_update_request" payload
-function ClientUpdateRequest() {
-  this.type = "client_update_request";
+class ClientUpdateRequest {
+  constructor() {
+    this.type = "client_update_request";
+  }
 }
 
 // Object used in the generation of "server_hello" payload
-function ServerHelloData(host) {
-  this.type = "server_hello";
-  this.sender = host;
+class ServerHelloData {
+  constructor(host) {
+    this.type = "server_hello";
+    this.sender = host;
+  }
 }
 
 // Object used in the generation of "signed_data" payload
-function SignedData(data, counter, signature) {
-  this.type = "signed_data";
-  this.data = data;
-  this.counter = counter;
-  this.signature = signature;
+class SignedData {
+  constructor(data, counter, signature) {
+    this.type = "signed_data";
+    this.data = data;
+    this.counter = counter;
+    this.signature = signature;
+  }
 }
 
 // Object used in the creation of "client_list" response
-function ClientList() {
-  this.type = "client_list";
-  this.servers = [];
+class ClientList {
+  constructor() {
+    this.type = "client_list";
+    this.servers = [];
+  }
+}
+
+// Object used in the creation of "client_list" response
+class ServerClientList {
+  constructor() {
+    this.address = address;
+    this.clients = clients;
+  }
 }
 
 /* --- Protocol functions --- */
+
+// Validate that message has a valid signature and valid counter
+function isValidMessage (publicKey, data, signature, counter, trackedCounter) {
+
+  // Verify counter
+  if (!isValidCounter(counter, trackedCounter)) {
+    console.log("Invalid or missing counter.");
+    return false;
+  }
+
+  // Verify signature
+  const concat = JSON.stringify(data) + counter.toString();
+  if (!isValidBase64Signature(signature, publicKey, concat)){
+    console.log("Invalid or missing signature");
+    return false;
+  }
+
+  return true;
+}
+
+/* --- Fuctions for "signed_data" payloads --- */
 
 // Processes a data object of type "hello"
 // Returns a generic message (no protocol defined response)
@@ -72,21 +109,17 @@ function processHello(connectionId, data, counter, signature) {
   if (!isValidPublicKey(publicKey))
     return "Invalid or missing public key";
 
-  // Verify counter - tracked counter is zero
-  if (!isValidCounter(counter, -1)) 
-    return "Invalid or missing counter";
-
-  // Verify signature
-  const concat = JSON.stringify(data) + counter.toString()
-  if (!isValidBase64Signature(signature, publicKey, concat))
-    return "Invalid or missing signature";
+  // Validates message. As hello is assumed to be the first messsage from the
+  // client, -1 is used as the first tracked counter
+  if (!isValidMessage(publicKey, data, signature, counter, -1)) 
+    return "Message failed validation";
 
   // Add connection to list of valid clients
-  addClient(connectionId, new ClientInfo(publicKey, counter));
+  upsertClient(connectionId, new ClientInfo(publicKey, counter));
   return "Success";
 }
 
-// Process server hellos
+// Process server_hello messages
 // Returns true if server was successfully identified and all validations pass;
 // false otherwise
 function processServerHello(connectionId, data, counter, signature) {
@@ -107,31 +140,179 @@ function processServerHello(connectionId, data, counter, signature) {
   // Check for valid public key  
   const publicKey = getNeighbourhoodServerPublicKey(sender);
   if (!isValidPublicKey(publicKey)) {
-    console.log("Invalid or missing public key. Please get admin to update");
+    console.log("Invalid or missing public key");
     return false;
   }
 
-  // Verify counter - tracked counter is starts at -1
-  if (!isValidCounter(counter, -1)) {
-    console.log("Invalid or missing counter.");
-    return false;
-  }
-
-  // Verify signature
-  const concat = JSON.stringify(data) + counter.toString();
-  if (!isValidBase64Signature(signature, publicKey, concat)){
-    console.log("Invalid or missing signature for server");
+  // Check for valid server_hello message
+  if (!isValidMessage(publicKey, data, signature, counter, -1)) {
+    console.log("Message failed validation");
     return false;
   }
     
-  // Add connection to list of valid clients
-  addActiveServer(connectionId, new ServerInfo(sender, []));
+  // Insert/Update active server for the connection
+  upsertActiveServer(connectionId, new ActiveServerInfo(sender, []));
   return true;
+}
+
+/* --- Fuctions for "signed_data" payloads of type "public_chat" --- */
+
+// Checks if a public chat message is valid
+// Return false if any validation fail; true otherwise
+function isValidPublicChat(connectionId, data, counter, signature) {
+  let publicKey;
+  let trackedCounter;
+  const fingerprint = data.sender;
+
+  // Ensure that fingerprint is not missing and is a string
+  if (type(fingerprint) !== "string") {
+    console.log("Sender was invalid type or missing");
+    return false;
+  }
+
+  // Ensure that sender is connected to the network in a valid way
+  if (isClient(connectionId)) {
+    
+    // When connection is a client, publicKey and counter can just be retrieved
+    let client = getClient(connectionId);
+    publicKey = client.publicKey;
+    counter = client.counter;
+  }
+  else if (isActiveServer(connectionId)) {
+    
+    // When connection is active server, have to get public key using fingerprint
+    let activeServer = getActiveServer(connectionId);
+    publicKey = activeServer.getPublicKeyUsingFingerprint(fingerprint);
+    
+    // Ensure client is still connected to the server
+    if (publicKey === undefined) {
+      console.log("Sending client was not found on active server that forwarded message");
+      return false;
+    }
+
+    // Get the counter for the client
+    counter = activeServer.getClientCounter(fingerprint);
+  }
+  else {
+    // Message coming a client/server that has not properly integrated
+    console.log("Chat message did not orginate from an active client or server, exiting");
+    return false;
+  }
+
+  // Check for valid message
+  if (!isValidMessage(publicKey, data, signature, counter, trackedCounter)) {
+    console.log("Invalid message detected, exiting")
+    return false;
+  }
+
+  return true;
+}
+
+// Forwards the "public_chat" payload to all other connected clients and servers
+// except the sender
+function forwardPublicChat(connectionId, payload) {
+  // For each client currently connected to the server, distribute the public message
+  const otherClients = getClients(); 
+  otherClients.forEach((_, otherConnId) => { 
+    // If sender is a client, ensure public message is not sent back
+    if (otherConnId !== connectionId) {
+      let ws = getConnection(otherConnId);
+      ws.send(JSON.stringify(payload));
+    }
+  });
+
+  // For each server currently connected to this server
+  const activeServers = getActiveServers();
+  activeServers.forEach((_, serverConnId) => {
+    // If sender is a server, ensure public message is not sent back
+    if (serverConnId !== connectionId) {
+      let ws = getConnection(serverConnId);
+      ws.send(JSON.stringify(payload));
+    }
+  });
+}
+
+// Checks if a "chat" message is valid
+// Return false if any validation fail; true otherwise
+function isValidChat(connectionId, data, counter, signature) {
+ 
+  // Check the destination_servers is an array and ensure it contains data
+  const dests = data.destination_servers;
+  if (!(dests instanceof Array) || dests.length === 0) {
+    console.log("Data field destination_servers was invalid, missing or empty");
+    return false;
+  }
+
+  // Check the symm_keys is an array and ensure it contains right amount of data
+  const symmKeys = data.symm_keys;
+  if (!(symmKeys instanceof Array) || symmKeys.length >= dests.length) {
+    console.log("Data field symm_keysi was invalid, missing or empty");
+    return false;
+  }
+
+  // Unable to validate counter and signature forwarded messages 
+  if (isActiveServer(connectionId)) {
+    console.log("Chat is message forwarded from other server. Stopping signature and counter validation");
+    return true;
+  }
+  
+  let publicKey, trackedCounter;
+  // Ensure that sender is connected to the network in a valid way
+  if (isClient(connectionId)) {
+    
+    // When connection is a client, publicKey and counter can just be retrieved
+    let client = getClient(connectionId);
+    publicKey = client.publicKey;
+    counter = client.counter;
+  }
+  else {
+    // Message coming a client/server that has not properly integrated
+    console.log("Chat message did not orginate from an active client or server, exiting");
+    return false;
+  }
+
+  // Check for valid message
+  if (!isValidMessage(publicKey, data, signature, counter, trackedCounter)) {
+    console.log("Invalid message detected, exiting")
+    return false;
+  }
+
+  return true;
+}
+
+// Forwards the "chat" payload to relevant connected clients and servers
+// except the sender
+function forwardChat(connectionId, host, payload) {
+  const dests = payload.data.destination_servers;
+
+  // Don't send chat to other clients unless destinations includes host
+  if (dests.includes(host)) {
+    // For each client currently connected to the server, distribute the message
+    const otherClients = getClients(); 
+    otherClients.forEach((_, otherConnId) => { 
+      // If sender is a client, ensure public message is not sent back
+      if (otherConnId !== connectionId) {
+        let ws = getConnection(otherConnId);
+        ws.send(JSON.stringify(payload));
+      }
+    });
+  }
+
+  // For each server currently connected to this server
+  const activeServers = getActiveServers();
+  activeServers.forEach((serverInfo, serverConnId) => {
+    // If sender is a server, ensure message is not sent back
+    // Ensure that message is only sent to relevant servers
+    if (serverConnId !== connectionId && dests.includes(serverInfo.address)) {
+      let ws = getConnection(serverConnId);
+      ws.send(JSON.stringify(payload));
+    }
+  });
 }
 
 // Processes any requests of the type "signed_data"
 // Returns json string if there is a reply; otherwise undefined
-function processSignedData (connectionId, payload) {
+function processSignedData (connectionId, payload, host) {
 
   // Check for invalid data.type
   const dataType = payload.data.type;
@@ -145,7 +326,7 @@ function processSignedData (connectionId, payload) {
     case "hello":
       console.log("Processing hello message");
       let message = processHello(
-        connectionId, 
+        connectionId,
         payload.data,
         payload.counter,
         payload.signature
@@ -153,7 +334,7 @@ function processSignedData (connectionId, payload) {
       console.log(`ProcessHello returned: ${message}` ) 
       return;
 
-      // Process the server_hello message
+      // Process server_hello message
       case "server_hello":
         let success = processServerHello(
           connectionId,
@@ -174,13 +355,31 @@ function processSignedData (connectionId, payload) {
         serverWs.close();
         return;
 
-      // TODO chat
-      // TODO public_chat
+      // Process public_chat message
       case "public_chat":
+        if (isValidPublicChat(
+          connectionId,
+          payload.data,
+          payload.counter,
+          payload.signature)
+        ) {
+          // Only forward public chat if message is valid
+          forwardChat(connectionId, host, payload);
+        } 
+        return;
+
       case "chat":
-        let reply = {}
-        reply.message = "Not Implemented Yet"
-        return JSON.stringify(reply);
+        // Validate the chat is a valid message from one connected clients
+        if (isValidChat(
+          connectionId,
+          payload.data,
+          payload.counter,
+          payload.signature)
+        ) {
+          // Only forward public chat if message is valid
+          forwardChat(connectionId, host, payload);
+        } 
+        return;
   }
 }
 
@@ -198,12 +397,17 @@ function processClientListReq (host) {
   });
 
   // Add host server info to list of servers
-  clientList.servers.push(new ServerInfo(host, myClients));
+  clientList.servers.push(new ServerClientList(host, myClients));
 
   // Add all other servers to server list
   const activeServers = getActiveServers();
-  activeServers.forEach((serverInfo) => {
-    clientList.servers.push(serverInfo);
+  activeServers.forEach((activeServerInfo) => {
+    clientList.servers.push(
+      new ServerClientList(
+        activeServerInfo.address,
+        activeServerInfo.map(client => client.publicKey)
+      )
+    );
   });
 
   // Stringify the object in preparation for sending
@@ -213,7 +417,7 @@ function processClientListReq (host) {
 // Processes requests of the type "client_update"
 // Return true clientUpdate is able to match to an actvie server and update clients;
 // false otherwise
-function processClientUpdate(connectionId, clients) {
+function processClientUpdate(connectionId, publicKeys) {
   
   // Check whether there is active server
   const activeServer = getActiveServer(connectionId);
@@ -222,22 +426,28 @@ function processClientUpdate(connectionId, clients) {
     return false;
   }
 
-  // Check whether clients is an array
-  if (!clients instanceof Array) {
+  // Check whether publicKeys is an array
+  if (!publicKeys instanceof Array) {
     console.log(`Parsed data clients was not an array, defaulting to empty`);
-    return false
+    return false;
   }
 
-  // Ensure all of the clients are valid public keys in the correct format
-  let result = []
-  clients.forEach((client) => {
-    if(isValidPublicKey(client)) {
-      result.push(client);
+  // Ensure all of the publicKeys are valid public keys in the correct format
+  let updateClientInfos = [];
+  publicKeys.forEach((publicKey) => {
+    // Filter out any invalid public keys
+    if(!isValidPublicKey(publicKey)) {
+      return;
     }
+
+    // Add new clientInfo to the active server 
+    updateClientInfos.push(
+      new ClientInfo(publicKey, activeServer.getCounter(publicKey))
+    );
   }); 
   
   // Update the active server map value
-  activeServer.clients = result;
+  activeServer.clientInfos = result;
   setActiveServer(connectionId, activeServer);
   return true;
 }

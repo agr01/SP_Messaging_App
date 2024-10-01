@@ -10,22 +10,22 @@ const {
 } = require('./helper.js'); 
 
 const {
+  addConnection,
+  getConnection,
   getConnections,
   deleteConnection,
-  addClient,
+  upsertClient,
   getClient,
   getClients,
   isClient,
   deleteClient,
-  addActiveServer,
+  upsertActiveServer,
   getActiveServer,
   getActiveServers,
   isActiveServer,
   deleteActiveServer,
   getNeighbourhoodServerPublicKey,
-  isInNeighbourhood,
-  getConnection,
-  addConnection
+  isInNeighbourhood
 } = require("./server-state.js");
 
 const {
@@ -81,7 +81,7 @@ wss.on('connection', (ws, req) => {
     
     // If payload is of type "signed_data"
     if (payload.type === "signed_data") {
-      reply = processSignedData(connectionId, payload);
+      reply = processSignedData(connectionId, payload, host);
     }
 
     // If payload is of type "client_list_request"
@@ -125,6 +125,7 @@ wss.on('connection', (ws, req) => {
     }
 
     // Cleanup WebSocket connection for client
+    // Potential security flaw - don't cleanup connection
     deleteConnection(connectionId);
   });
 });

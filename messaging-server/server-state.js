@@ -9,7 +9,7 @@ const connections = new Map();
 const clients = new Map();
 
 // Map of external server connctions to  that have successfully sent a server_hello
-// key: value -> connectionId: ServerInfo object
+// key: value -> connectionId: ActiveServerInfo object
 const active_servers = new Map();
   
 // Map of servers in neighbourhood
@@ -47,7 +47,7 @@ function deleteConnection(connectionId) {
 
 // Adds a new connection to the clients Map
 // Returns: void
-function addClient(connectionId, clientInfo) {
+function upsertClient(connectionId, clientInfo) {
   clients.set(connectionId, clientInfo);
 }
 
@@ -79,7 +79,7 @@ function deleteClient(connectionId) {
 
 // Adds a new connection to the active_servers Map
 // Returns: void
-function addActiveServer(connectionId, clientInfo) {
+function upsertActiveServer(connectionId, clientInfo) {
   active_servers.set(connectionId, clientInfo);
 }
 
@@ -126,12 +126,12 @@ module.exports = {
   getConnection,
   getConnections,
   deleteConnection,
-  addClient,
+  upsertClient,
   getClient,
   getClients,
   isClient,
   deleteClient,
-  addActiveServer,
+  upsertActiveServer,
   getActiveServer,
   getActiveServers,
   isActiveServer,
