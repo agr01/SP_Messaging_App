@@ -4,19 +4,21 @@ import { catchError, retry, throwError, tap, Subject, BehaviorSubject } from 'rx
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RecipientService } from './client.service';
 import { CryptoService } from './crypto.service';
-import { PublicChat } from '../models/public-chat';
+import { PublicChat, sanitizePublicChat } from '../models/public-chat';
 import { Client } from '../models/client';
 import { Chat } from '../models/chat';
 import { UserService } from './user.service';
+import { ChatMessage } from '../models/chat-message';
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
 
-  private messages: Chat[] = []
+  private messages: ChatMessage[] = []
 
-  private _messagesSubject = new BehaviorSubject<Chat[]>(this.messages);
+  private _messagesSubject = new BehaviorSubject<ChatMessage[]>(this.messages);
   public messages$ = this._messagesSubject.asObservable();
  
 
@@ -28,26 +30,53 @@ export class ChatService {
     // TODO: Remove
     // Add test chat message
       this.addMessage({
-        participants: ["public"],
+        sender: "DByaiKOyEu1ZPe75A66HBSkR+a4NFoKTlnO7UeJaVpQ=",
+        recipients: [],
+        isPublic: true,
         message: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      })
+      this.addMessage({
+        sender: this.userService.getUserFingerprint(),
+        recipients: [],
+        isPublic: true,
+        message: "Public message from me"
       })
     
 
     // Listen for incoming messages
-    this.webSocketService.messageRecieved$.subscribe((message: any) => {
-      
-      // TODO: check format
-      // TODO: Validate message (validate signature)
-      if (message.data?.type === "chat"){
-        this.addMessage({message: message.message, participants: []});
-      }
-      
+    this.webSocketService.messageRecieved$.subscribe((message: any) => {  
+      this.processMessage(message);
     });
     
   }
 
+  private processMessage(message: any){
+    if (!message) return;
+    
+    if (message.type == "public_chat"){
+      this.processPublicChat(message);
+    }
+
+    if (message.type == "chat"){
+      this.processChat(message);
+    }
+  }
+
+  // Sanitize public chat message & add to messages
+  private processPublicChat(message: any){
+    const publicChat = sanitizePublicChat(message);
+    if (!publicChat) return;
+
+    this.addMessage(this.publicChatToChatMessage(publicChat))
+  }
+
+  // TODO: Implement
+  private processChat(message: any){
+    console.error("Chat processing not implemented");
+  }
+
   // Adds a message to the messages subject & emits to observers
-  private addMessage(message:Chat){
+  private addMessage(message:ChatMessage){
     
     console.log("Message added to chat service:",message)
 
@@ -58,11 +87,8 @@ export class ChatService {
   }
 
   // TODO: Implement
-  public sendMessage(message: Chat, clients: Client[]){
-
-    this.addMessage(message);
-
-    this.webSocketService.send(message)
+  public sendMessage(message: string, recipients: Client[]){
+    console.error("Send message not implemented");
   }
 
   // Sends a public chat message
@@ -76,6 +102,26 @@ export class ChatService {
       sender: userFingerprint,
       message: message
     } as PublicChat)
+
+    // Add message to messages
+    const chatMessage: ChatMessage = {
+      sender: userFingerprint,
+      recipients: [],
+      isPublic: true,
+      message: message
+    }
+    this.addMessage(chatMessage);
+  }
+
+  private publicChatToChatMessage(publicChat: PublicChat): ChatMessage{
+
+    return {
+      sender: publicChat.sender,
+      recipients: [],
+      isPublic: true,
+      message: publicChat.message
+    }
+
   }
 
 }

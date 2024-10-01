@@ -3,9 +3,8 @@ import { ChatService } from '../../services/chat.service';
 import { FormsModule } from '@angular/forms';
 import { RecipientService } from '../../services/client.service';
 import { combineLatestWith, Subscription, take } from 'rxjs';
-import { Chat } from '../../models/chat';
-import { CryptoService } from '../../services/crypto.service';
 import { UserService } from '../../services/user.service';
+import { ChatMessage } from '../../models/chat-message';
 
 @Component({
   selector: 'app-chat',
@@ -19,7 +18,7 @@ export class ChatComponent implements OnDestroy{
   @ViewChild('inputBox', { static: false }) inputBox!: ElementRef;
   
   private displayChatSubscription: Subscription
-  private displayChats: Chat[] = []
+  private displayChats: ChatMessage[] = []
 
   constructor(
     private chatService: ChatService,
@@ -37,17 +36,19 @@ export class ChatComponent implements OnDestroy{
   }
 
   // Sets the value of displayChats, filtering chat messeges based on the selected particilpant(s)
-  private updateDisplayMessages(messages: Chat[], selectedClients: Set<string>){
-    console.log("updating displayed messages", messages, selectedClients);
+  private updateDisplayMessages(messages: ChatMessage[], selectedRecipients: Set<string>){
+    console.log("updating displayed messages", messages, selectedRecipients);
 
     this.displayChats = messages.filter(
       (message)=>{
-        for (const participant of message.participants){
-          const participantIsSelected = selectedClients.has(participant);
-          const participantIsUser = participant == this.userService.getUserFingerprint()
-          if (!participantIsSelected && !participantIsUser){
-            return false;
-          }
+        // Return all public messages if public chat is selected
+        if (message.isPublic && this.clientService.publicRecipientSelected()) 
+          return true;
+
+        // Filter out messages that do not contain all selected recipients
+        for (const selectedRecipient of selectedRecipients){
+          const containsSelected = message.recipients.includes(selectedRecipient);
+          if (!containsSelected) return false;
         }
         return true;
       }
@@ -65,10 +66,8 @@ export class ChatComponent implements OnDestroy{
     // Get input text from contenteditable div
     const text = this.inputBox.nativeElement.textContent;
     
-    // Remove leadin & trailing whitespace
-    const message = text.trim();
     // Check the message contains content
-    if ( !message || !message.trim().length ) return;
+    if ( !text || !text.trim().length ) return;
     
     // Send message if selected recipient is public
     if (this.clientService.publicRecipientSelected()){
@@ -78,8 +77,8 @@ export class ChatComponent implements OnDestroy{
 
     // Otherwise send a message to selected clients
     else{
-      const selectedClients = this.clientService.getSelectedRecipients();
-      this.chatService.sendMessage(message, selectedClients);
+      const selectedRecipients = this.clientService.getSelectedRecipients();
+      this.chatService.sendMessage(text, selectedRecipients);
     }
   
     // Clear message input field

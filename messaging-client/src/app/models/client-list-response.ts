@@ -1,3 +1,4 @@
+import { isValidPemKey, isValidServerAddress } from "../helpers/validators";
 import { Client } from "./client";
 
 export interface ClientListResponse {
@@ -9,44 +10,32 @@ export interface ClientListResponse {
 }
 
 
-export function sanitizeClientListResponse(message: any): ClientListResponse | null {
+export function sanitizeClientListResponse(obj: any): ClientListResponse | null {
 
-  if (!isClientListResponse(message)) {
+  if (!isClientListResponse(obj)) {
     console.log("invalid client list response")
     return null
   };
 
   let newMessage = {
-    type: message.type,
+    type: obj.type,
     servers: [] as { address: string; clients: string[] }[]
   } as ClientListResponse
 
-  for (const server of message.servers){
+  for (const server of obj.servers){
     newMessage.servers.push({address: server.address, clients: server.clients})
   }
 
     
   return {
-    type: message.type,
-    servers: message.servers
+    type: obj.type,
+    servers: obj.servers
   };
   
 }
 
 // Type guard to check if a message is a valid client list response
 function isClientListResponse(message: any): message is ClientListResponse {
-  if (!isValidMessage(message)) return false;
-
-  if (!Array.isArray(message.servers)) {
-    console.log("Servers is not an array:", message.servers);
-    return false;
-  }
-
-  const serversValid = message.servers.every((server: any, index: number) => isValidServer(server, index));
-  return serversValid;
-}
-
-function isValidMessage(message: any): boolean {
   if (!message) {
     console.log("Message is undefined or null");
     return false;
@@ -57,7 +46,13 @@ function isValidMessage(message: any): boolean {
     return false;
   }
 
-  return true;
+  if (!Array.isArray(message.servers)) {
+    console.log("Servers is not an array:", message.servers);
+    return false;
+  }
+
+  const serversValid = message.servers.every((server: any, index: number) => isValidServer(server, index));
+  return serversValid;
 }
 
 function isValidServer(server: any, index: number): boolean {
@@ -93,18 +88,3 @@ function isValidClient(client: any, serverIndex: number, clientIndex: number): b
   return true; // Client is valid
 }
 
-function isValidServerAddress(address: string): boolean {
-  const serverAddressRegex = /^(localhost:\d{1,5}|(\d{1,3}\.){3}\d{1,3}:\d{1,5})$/;
-  const match = serverAddressRegex.test(address);
-
-  if (!match) console.log("Invalid server address:", address);
-  return match;
-}
-
-function isValidPemKey(key: string): boolean {
-  const pemKeyRegex = /^-----BEGIN PUBLIC KEY-----\n([A-Za-z0-9+/=\n]+)\n-----END PUBLIC KEY-----$/;
-  const match = pemKeyRegex.test(key);
-
-  if (!match) console.log("Invalid pem key:", key);
-  return match;
-}
