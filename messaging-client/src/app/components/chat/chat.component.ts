@@ -60,8 +60,8 @@ export class ChatComponent implements OnDestroy{
   }
 
 
-  // Trims input & sends message via the chatService
-  sendMessage(){
+  // Sends appropriate message via the chat service
+  public onSendClicked(){
     
     // Get input text from contenteditable div
     const text = this.inputBox.nativeElement.textContent;

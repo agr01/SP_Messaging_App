@@ -6,9 +6,10 @@ import { RecipientService } from './client.service';
 import { CryptoService } from './crypto.service';
 import { PublicChat, sanitizePublicChat } from '../models/public-chat';
 import { Client } from '../models/client';
-import { Chat } from '../models/chat';
+import { Chat, ChatData } from '../models/chat';
 import { UserService } from './user.service';
 import { ChatMessage } from '../models/chat-message';
+import { AesEncryptedData } from '../models/aes-encrypted-data';
 
 
 @Injectable({
@@ -24,6 +25,7 @@ export class ChatService {
 
   constructor(
     private webSocketService: WebSocketService,
+    private cryptoService: CryptoService,
     private userService: UserService
   ) { 
 
@@ -86,9 +88,57 @@ export class ChatService {
     this._messagesSubject.next(newMessages);
   }
 
-  // TODO: Implement
-  public sendMessage(message: string, recipients: Client[]){
-    console.error("Send message not implemented");
+  public async sendMessage(message: string, recipients: Client[]){
+
+    // Create chat object
+    const chat = this.createChat(message, recipients);
+
+    console.log("Sending chat:", chat)
+
+    // Create chat data
+    // Encrypt chat using AES
+    const aesRes: AesEncryptedData = await this.cryptoService.encryptAES(JSON.stringify(chat));
+
+    // Add sym_keys & dest server for each participant
+    let encryptedAesKeys: string[] = []
+    let destServerSet = new Set<string>
+
+    for (const recipient of recipients){
+      
+      // Encrypt AES key with each recipient's public RSA key
+      const encryptedAesKey: string = await this.cryptoService.encryptRsa(recipient.publicKey, aesRes.key);
+      encryptedAesKeys.push(encryptedAesKey);
+      
+      // Add recipient's server to the set of dest servers
+      destServerSet.add(recipient.serverAddress);
+    }
+
+    const chatData: ChatData = {
+      type: "chat",
+      destination_servers: Array.from(destServerSet),
+      iv: aesRes.iv,
+      symm_keys: encryptedAesKeys,
+      chat: aesRes.cipherText
+    }
+
+    // Send as signed data
+    this.webSocketService.sendAsSignedData(chatData);
+  }
+
+  // Creates a chat object given a message and array of recipients
+  private createChat(message: string, recipients: Client[]): Chat{
+    // Add self as first participant (sender)
+    const participants: string[] = []
+    participants.push(this.userService.getUserFingerprint());
+    
+    // Add recipients
+    const recipientFingerprints = recipients.map(r => r.fingerprint);
+    participants.push(...recipientFingerprints);
+
+    return {
+      participants: participants,
+      message: message,
+    }
   }
 
   // Sends a public chat message
@@ -97,7 +147,7 @@ export class ChatService {
     const userFingerprint = this.userService.getUserFingerprint();
 
     // Send as signed_data
-    this.webSocketService.sendAsData({
+    this.webSocketService.sendAsSignedData({
       type: "public_chat",
       sender: userFingerprint,
       message: message

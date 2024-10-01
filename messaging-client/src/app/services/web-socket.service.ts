@@ -107,7 +107,7 @@ export class WebSocketService {
     this.webSocket.send(JSON.stringify(message));
   }
 
-  async sendAsData(data: Hello | ChatData | PublicChat ){
+  async sendAsSignedData(data: Hello | ChatData | PublicChat ){
 
     let message = {} as SignedData;
 
