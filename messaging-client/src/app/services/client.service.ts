@@ -73,7 +73,7 @@ export class RecipientService implements OnDestroy {
     helloData.type = "hello";
     helloData.public_key = await this.cryptoService.generateUserPublicKeyPem();
 
-    this.webSocketService.sendAsData(helloData);
+    this.webSocketService.sendAsSignedData(helloData);
   }
 
   // Sends a client list request message to the server
@@ -111,10 +111,8 @@ export class RecipientService implements OnDestroy {
 
     // Add each client
     for (const server of list.servers){
-      for (const client of server.clients){
-        
-        const clientPublicKey = this.cryptoService.standardisePem(client);
-        
+      for (const clientPublicKey of server.clients){
+                
         // Do not add self to online client list
         if (userPublicKey === clientPublicKey){
           containsUser = true;

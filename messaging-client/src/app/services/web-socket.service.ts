@@ -1,6 +1,5 @@
-import { Injectable, OnDestroy } from '@angular/core';
-// import { webSocket } from 'rxjs/webSocket';
-import { retry, Subject, BehaviorSubject, Subscription} from 'rxjs';
+import { Injectable } from '@angular/core';
+import { Subject, BehaviorSubject} from 'rxjs';
 import { Hello } from '../models/hello';
 import { ChatData } from '../models/chat';
 import { PublicChat } from '../models/public-chat';
@@ -14,31 +13,20 @@ import { CryptoService } from './crypto.service';
   providedIn: 'root',
 })
 export class WebSocketService {
-  // TODO: Change to actual websocket server
-  private readonly URL = 'ws://localhost:3000'
   
+  // TODO: Put list of servers somewhere else
   private readonly URLs = ['ws://localhost:3000', 'ws://localhost:3001']
   private currentUrlIndex = 0;
+  
+  private webSocket!: WebSocket; 
 
   // Subjects for message and connection handling
-  private connectionOpened = new Subject<Event>()
-  private connectionClosed = new Subject<Event>()
   private connectionIsOpen = new BehaviorSubject<boolean>(false); 
-
   private messageReceived = new Subject<any>()
-
-  // Web socket subject
-  private webSocketSubject: Subject<any> = new Subject
-
-  public webSocket$ = this.webSocketSubject.asObservable()
-  public connectionOpened$ = this.connectionOpened.asObservable()
-  public connectionIsOpen$ = this.connectionIsOpen.asObservable()
-  public connectionClosed$ = this.connectionClosed.asObservable()
-  
+  public connectionIsOpen$ = this.connectionIsOpen.asObservable()  
   public messageRecieved$ = this.messageReceived.asObservable()
 
 
-  private webSocket!: WebSocket; 
 
   constructor(
     private cryptoService: CryptoService
@@ -58,11 +46,14 @@ export class WebSocketService {
       this.connectionIsOpen.next(true);
     };
 
-
+    // On message - alert listeners
     this.webSocket.onmessage = (event) => {
-      
       try {
         const message = JSON.parse(event.data);
+        
+        // All incoming messages should have a type
+        if (!message || !message.type) return;
+        
         console.log("Recieved message", message)
         this.messageReceived.next(message); 
       } catch (error) {
@@ -116,7 +107,7 @@ export class WebSocketService {
     this.webSocket.send(JSON.stringify(message));
   }
 
-  async sendAsData(data: Hello | ChatData | PublicChat ){
+  async sendAsSignedData(data: Hello | ChatData | PublicChat ){
 
     let message = {} as SignedData;
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {Buffer} from 'buffer';
 import { BehaviorSubject } from 'rxjs';
+import { AesEncryptedData } from '../models/aes-encrypted-data';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,10 @@ export class CryptoService {
 
   // Generate RSA Keys
   public async generateRsaKeys(): Promise<void> {
+
+    const randomValues = new Uint8Array(16);
+    window.crypto.getRandomValues(randomValues);
+    console.log("random values: ", randomValues);
     
     // Generate PSS Keys
     this.RsaPssKeyPair = await window.crypto.subtle.generateKey(
@@ -67,6 +72,7 @@ export class CryptoService {
   }
 
   // Encrypt data using RSA public key
+  // Returns base64 encoded ciphertext
   public async encryptRsa(publicKeyPem: string, data: string): Promise<string> {
     
     const publicKey = await this.pemToCryptoKey(publicKeyPem);
@@ -78,7 +84,7 @@ export class CryptoService {
       uint8Message
     );
     
-    return window.btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+    return Buffer.from(encrypted).toString('base64');
   }
 
   // Signs the data using the user's private RSA key
@@ -128,39 +134,65 @@ export class CryptoService {
   // Encrypts plaintext using a generated AES key
   // Returns iv and ciphertext
   // Source: https://medium.com/@tony.infisical/guide-to-web-crypto-api-for-encryption-decryption-1a2c698ebc25
-  public async encryptAES(plainText:string) {
-  
+  public async encryptAES(plainText:string): Promise<AesEncryptedData> {
+
     // encode the text you want to encrypt
     const encodedText = new TextEncoder().encode(plainText);
 
     // Create a random 16-byte initialization vector 
     const iv = window.crypto.getRandomValues(new Uint8Array(16));
 
-     // Generate a random 32-byte key
-     const key = await window.crypto.subtle.generateKey(
+    let key = undefined
+
+    try {
+      // Generate a random 32-byte key
+      key = await window.crypto.subtle.generateKey(
         {
             name: "AES-GCM",
-            length: 128 // 16 bytess
+            length: 128 // 16 bytes
         },
         true,
         ["encrypt"]
-    );
-
+      );
+      
+    } catch (error) {
+      console.error("Error generating aes key", error)
+      throw error
+    }
+     
     // Encrypt the data
-    const ciphertext = await window.crypto.subtle.encrypt(
-        {
-            name: "AES-GCM",
-            iv: iv,
-            tagLength: 256 // 256 bits - 32 bytes for authentication tag
-        },
-        key,
-        encodedText
-    );
+    let ciphertextBuff = undefined;
 
+    try {
+      ciphertextBuff = await window.crypto.subtle.encrypt(
+          {
+              name: "AES-GCM",
+              iv: iv,
+              tagLength: 128 // 16 bytes for authentication tag
+          },
+          key,
+          encodedText
+      );
+    } catch (error) {
+      console.error("Error encrypting data with aes key", error)
+      throw error
+    }
+    
+
+    // Export the key
+    let keyBuffer
+    try {
+      keyBuffer = await window.crypto.subtle.exportKey("raw", key)
+    } catch (error) {
+      console.error("Error exporting aes key", error)
+      throw error
+    }
+    
     // Return the base64 IV and ciphertext
     return {
-        iv: Buffer.from(iv).toString('base64'), 
-        cipherText: Buffer.from(ciphertext).toString('base64') 
+      key: Buffer.from(keyBuffer).toString('base64'),
+      iv: Buffer.from(iv).toString('base64'), 
+      cipherText: Buffer.from(ciphertextBuff).toString('base64')
     };
       
   }
@@ -242,8 +274,7 @@ export class CryptoService {
   }
 
   public async getFingerprint(publicKeyPem: string): Promise<string>{ 
-    const data = new TextEncoder().encode(publicKeyPem);
-
+    const data: Uint8Array = new TextEncoder().encode(publicKeyPem);
     const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
 
     return Buffer.from(hashBuffer).toString('base64')
