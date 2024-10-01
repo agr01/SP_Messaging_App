@@ -100,9 +100,7 @@ export class RecipientService implements OnDestroy {
   // Resends server hello & client request if the client's public key is not in the 
   // client list response.
   private async processClientListResponse(list: ClientListResponse){
-
-    console.log("Adding clients from: ", list)
-
+    
     // List to replace old client list
     let newClientList: Client[] = []
     // set to check whether each client is unique

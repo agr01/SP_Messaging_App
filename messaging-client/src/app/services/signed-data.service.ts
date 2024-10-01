@@ -24,11 +24,10 @@ export class SignedDataService {
 
   // Validates the signed data & returns the data it contains
   public async processSignedData(message: any){
-    console.log("processing signed data")
+    
     // sanitize data
     const signedData = sanitizeSignedData(message);
     if (!signedData) {
-      console.log("signed data sanitization failed")
       return null
     };
 

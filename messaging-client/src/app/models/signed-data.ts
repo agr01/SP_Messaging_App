@@ -30,53 +30,16 @@ export function sanitizeSignedData(obj: any): SignedData | null{
 }
 
 // Does not check for valid Hello data type as that is outgoing only
-// function isIncomingSignedData(obj: any): boolean{
-//     if (!obj || !obj.type || !obj.data || !obj.counter || !obj.signature) return false;
+function isIncomingSignedData(obj: any): boolean{
+    if (!obj || !obj.type || !obj.data || !obj.counter || !obj.signature) return false;
 
-//     if (obj.type !== "signed_data") return false;
+    if (obj.type !== "signed_data") return false;
 
-//     if (!(isChatData(obj.data) || isPublicChat(obj.data))) return false;
+    if (!(isChatData(obj.data) || isPublicChat(obj.data))) return false;
 
-//     if (!isNumber(obj.counter) || obj.counter < 0 || obj.counter > Number.MAX_SAFE_INTEGER) return false;
+    if (!isNumber(obj.counter) || obj.counter < 0 || obj.counter > Number.MAX_SAFE_INTEGER) return false;
 
-//     if (!isNonEmptyString(obj.signature)) return false;
-
-//     return true;
-// }
-
-// TODO: Revert to quiet function
-function isIncomingSignedData(obj: any): boolean {
-    if (!obj || !obj.type || !obj.data || !obj.counter || !obj.signature) {
-        console.log("Failed initial property existence check:", obj);
-        return false;
-    }
-
-    if (obj.type !== "signed_data") {
-        console.log("Type check failed: Expected 'signed_data', got", obj.type);
-        return false;
-    }
-
-    if (!(isChatData(obj.data) || isPublicChat(obj.data))) {
-        console.log("Failed chat type validation: Not valid chat data or public chat");
-        return false;
-    }
-
-    if (!isNumber(obj.counter) || obj.counter < 0 || obj.counter > Number.MAX_SAFE_INTEGER) {
-        console.log("Counter validation failed:", {
-            counter: obj.counter,
-            isNumber: isNumber(obj.counter),
-            inRange: obj.counter >= 0 && obj.counter <= Number.MAX_SAFE_INTEGER
-        });
-        return false;
-    }
-
-    if (!isNonEmptyString(obj.signature)) {
-        console.log("Signature validation failed:", {
-            signature: obj.signature,
-            isNonEmptyString: isNonEmptyString(obj.signature)
-        });
-        return false;
-    }
+    if (!isNonEmptyString(obj.signature)) return false;
 
     return true;
 }

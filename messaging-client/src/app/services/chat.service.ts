@@ -72,10 +72,8 @@ export class ChatService {
   private async processMessage(message: any){
     if (!message) return;
     
-    console.log("processing message", message)
     const data = await this.signedDataService.processSignedData(message);
     if (!data) return;
-    console.log("processed signed data")
 
     if (data.type == "public_chat"){
       this.processPublicChat(data);
