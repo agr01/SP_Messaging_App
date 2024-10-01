@@ -72,7 +72,7 @@ class ClientList {
 
 // Object used in the creation of "client_list" response
 class ServerClientList {
-  constructor() {
+  constructor(address, clients) {
     this.address = address;
     this.clients = clients;
   }
