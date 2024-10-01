@@ -18,7 +18,7 @@ export class ChatComponent implements OnDestroy{
   @ViewChild('inputBox', { static: false }) inputBox!: ElementRef;
   
   private displayChatSubscription: Subscription
-  private displayChats: ChatMessage[] = []
+  private displayedChats: ChatMessage[] = []
 
   constructor(
     private chatService: ChatService,
@@ -37,22 +37,26 @@ export class ChatComponent implements OnDestroy{
 
   // Sets the value of displayChats, filtering chat messeges based on the selected particilpant(s)
   private updateDisplayMessages(messages: ChatMessage[], selectedRecipients: Set<string>){
-    console.log("updating displayed messages", messages, selectedRecipients);
+    console.log("updating displayed messages using", messages, selectedRecipients);
 
-    this.displayChats = messages.filter(
+    this.displayedChats = messages.filter(
       (message)=>{
         // Return all public messages if public chat is selected
-        if (message.isPublic && this.clientService.publicRecipientSelected()) 
-          return true;
+        if (this.clientService.publicRecipientSelected()) 
+          return message.isPublic;
+
+        else if (message.isPublic) return false;
 
         // Filter out messages that do not contain all selected recipients
         for (const selectedRecipient of selectedRecipients){
-          const containsSelected = message.recipients.includes(selectedRecipient);
+          const containsSelected = message.recipients.includes(selectedRecipient) || message.sender == selectedRecipient;
           if (!containsSelected) return false;
         }
         return true;
       }
     )
+
+    console.log("New displayed messages: ", this.displayedChats)
   } 
 
   ngOnDestroy(): void {
@@ -86,6 +90,6 @@ export class ChatComponent implements OnDestroy{
   }
 
   public getDisplayMessages(){
-    return this.displayChats;
+    return this.displayedChats;
   }
 }

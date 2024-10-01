@@ -175,7 +175,7 @@ export class ChatService {
     // Encrypt chat using AES
     const aesRes: AesEncryptedData = await this.cryptoService.encryptAES(JSON.stringify(chat));
 
-    // Add sym_keys & dest server for each participant
+    // Add symm_keys & dest server for each participant
     let encryptedAesKeys: string[] = []
     let destServerSet = new Set<string>
 
@@ -196,6 +196,14 @@ export class ChatService {
       symm_keys: encryptedAesKeys,
       chat: aesRes.cipherText
     }
+    
+    // Add to messages array
+    this.addMessage({
+      sender: this.userService.getUserFingerprint(),
+      recipients: recipients.map(r => r.fingerprint),
+      message: message,
+      isPublic: false
+    })
 
     // Send as signed data
     this.signedDataService.sendAsSignedData(chatData);

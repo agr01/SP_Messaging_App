@@ -56,7 +56,7 @@ export class RecipientService implements OnDestroy {
 
     // TODO: PUT BACK to 5 secs
     // Send a client request every 5 seconds
-    this.resendClientRequestSubscription = interval(30000).subscribe(
+    this.resendClientRequestSubscription = interval(10000).subscribe(
       ()=>this.sendClientRequest()
     )
 
@@ -168,7 +168,11 @@ export class RecipientService implements OnDestroy {
     }
 
     // Toggle
-    if (selectedClients.has(clientFingerprint)) selectedClients.delete(clientFingerprint);
+    if (selectedClients.has(clientFingerprint)) {
+      selectedClients.delete(clientFingerprint);
+      // If selected clients is empty - default to public
+      if (selectedClients.size < 1) selectedClients.add("public")
+    }
     else selectedClients.add(clientFingerprint);
 
     this._selectedRecipientFingerprintsSubject.next(selectedClients);
