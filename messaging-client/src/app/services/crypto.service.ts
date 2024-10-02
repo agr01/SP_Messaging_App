@@ -22,13 +22,13 @@ const RSA_SIGN_HASH = "SHA-256"
 })
 export class CryptoService {
 
-  private _rsaPssKeyPair: CryptoKeyPair | undefined
-  private _rsaOaepKeyPair: CryptoKeyPair | undefined
+  _rsaPssKeyPair: CryptoKeyPair | undefined
+  _rsaOaepKeyPair: CryptoKeyPair | undefined
   
   // Emits when RSA keys are generated
   // Used to send server hello only when both the keys are generated and the connection is open
-  private rsaKeysGenerated = new BehaviorSubject<boolean>(false); 
-  public rsaKeysGenerated$ = this.rsaKeysGenerated.asObservable();
+  rsaKeysGenerated = new BehaviorSubject<boolean>(false); 
+  rsaKeysGenerated$ = this.rsaKeysGenerated.asObservable();
   
   constructor() { }
 
