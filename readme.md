@@ -19,8 +19,10 @@ To run a one of instance of the server, ensure you are in the messaging-server d
 - To change the allowed neighbourhood servers, modify the 2 arrays function ```setupNeighbourhood```. A neighbourhood server will have an address and a publicKey, one in each array respectively. The array indexes of servers will match.  
 
 There is also the option of running more than server using the same code. 2 sample .env files have been provided.
-To run these, 2 separate terminals are required. In each, run one of the following
+To run these, 2 separate terminals are required. In each, run one of the following:
+
 ```node server.js server1.env``` -> Runs localhost:3000
+
 ```node server.js server2.env``` -> Runs localhost:3001
 
 ## Manually Running the Client
