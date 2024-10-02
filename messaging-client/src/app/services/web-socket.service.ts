@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Subject, BehaviorSubject} from 'rxjs';
 import { CryptoService } from './crypto.service';
-import { DEFAULT_WEBSOCKET, SERVERS } from '../constants';
+import { DEFAULT_SERVER, DEFAULT_WEBSOCKET, SERVERS } from '../constants';
 
 
 @Injectable({
@@ -10,9 +10,9 @@ import { DEFAULT_WEBSOCKET, SERVERS } from '../constants';
 export class WebSocketService {
   
   private currentUrlIndex = 0;
-  private currentWebSocketUrl: string = DEFAULT_WEBSOCKET
-  private readonly webSocketUrls: string[] = SERVERS.map(s => "ws://" + s)
-  private readonly defaultWebSocketUrl: string = DEFAULT_WEBSOCKET
+  private currentServer: string = DEFAULT_SERVER
+  private readonly webSocketUrls: string[] = SERVERS
+  private readonly defaultWebSocketUrl: string = DEFAULT_SERVER
   
   private webSocket!: WebSocket; 
 
@@ -22,8 +22,8 @@ export class WebSocketService {
   public connectionIsOpen$ = this.connectionIsOpen.asObservable()  
   public messageRecieved$ = this.messageReceived.asObservable()
 
-  private currentWebSocketUrlSubject = new BehaviorSubject<string>(this.currentWebSocketUrl); 
-  public currentWebSocketUrl$ = this.currentWebSocketUrlSubject.asObservable();
+  private connectedServerSubject = new BehaviorSubject<string>(this.currentServer); 
+  public connectedServer$ = this.connectedServerSubject.asObservable();
 
   constructor(
     private cryptoService: CryptoService
@@ -32,14 +32,16 @@ export class WebSocketService {
 
   public connect(){
     
-    console.log(`Connecting to ${this.currentWebSocketUrl}`);
+    console.log(`Connecting to ${this.currentServer}`);
 
-    this.webSocket = new WebSocket(this.currentWebSocketUrl);
+    const url = "wss://" + this.currentServer
+
+    this.webSocket = new WebSocket(url);
 
     this.webSocket.onopen = () => {
-      console.log(`Connected to ${this.currentWebSocketUrl}`);
+      console.log(`Connected to ${this.currentServer}`);
       this.connectionIsOpen.next(true);
-      this.currentWebSocketUrlSubject.next(this.currentWebSocketUrl);
+      this.connectedServerSubject.next(this.currentServer);
     };
 
     // On message - alert listeners
@@ -50,7 +52,7 @@ export class WebSocketService {
         // All incoming messages should have a type
         if (!message || !message.type) return;
         
-        console.log(`Received message from ${this.currentWebSocketUrl}`, message)
+        console.log(`Received message from ${this.currentServer}`, message)
 
         this.messageReceived.next(message); 
       } catch (error) {
@@ -77,17 +79,17 @@ export class WebSocketService {
   // If an attempt to connect has been made to all servers, waits 5 seconds before trying to reconnect
   private reconnect() {
 
-    const prevServerUrl = this.currentWebSocketUrl
+    const prevServerUrl = "wss://" + this.currentServer
 
     // If last server was not default - try connecting to default first
     if (prevServerUrl !== this.defaultWebSocketUrl){
-      this.currentWebSocketUrl = this.defaultWebSocketUrl;
+      this.currentServer = this.defaultWebSocketUrl;
       this.connect();
       return;
     }
 
     // Else try a different server from the list
-    this.currentWebSocketUrl = this.webSocketUrls[this.currentUrlIndex]
+    this.currentServer = this.webSocketUrls[this.currentUrlIndex]
     
     // If all servers tried -> reconnect with timeout
     if (this.currentUrlIndex == 0){
@@ -113,7 +115,7 @@ export class WebSocketService {
       return
     }
     
-    console.log(`sending message to ${this.currentWebSocketUrl}: `, message);
+    console.log(`sending message to ${this.currentServer}: `, message);
 
     this.webSocket.send(JSON.stringify(message));
   }
