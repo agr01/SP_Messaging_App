@@ -50,6 +50,8 @@ export class SignedDataService {
     message.signature = await this.cryptoService.signRsa(dataToSign);
     
     this.webSocketService.send(message);
+    
+    this.incrementCounter();
   }
 
   private getCounter(): number{

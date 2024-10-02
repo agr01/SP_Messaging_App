@@ -114,8 +114,8 @@ function setupWebSocketEvents(ws, host, type, connectionId, address) {
     if (payload.type === "client_update") {
       let success = processClientUpdate(connectionId, payload.clients);
       if (!success) {
-        console.log(`Failure with client update. Retrying "server_hello"`);
-        ws.send(JSON.stringify(generateServerHello(host)));
+        console.log(`Failure with client update. Closing bad connection`);
+        ws.close();
       }
     }
 

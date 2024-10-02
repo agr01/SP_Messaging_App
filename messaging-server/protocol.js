@@ -179,12 +179,13 @@ function isValidPublicChat(connectionId, data, counter, signature) {
     // When connection is a client, publicKey and counter can just be retrieved
     let client = getClient(connectionId);
     publicKey = client.publicKey;
-    counter = client.counter;
+    trackedCounter = client.counter;
   }
   else if (isActiveServer(connectionId)) {
     
     // When connection is active server, have to get public key using fingerprint
-    let activeServer = getActiveServer(connectionId);
+    const activeServer = getActiveServer(connectionId);
+    console.log("Active server: ", activeServer)
     publicKey = activeServer.getPublicKeyUsingFingerprint(fingerprint);
     
     // Ensure client is still connected to the server
@@ -194,7 +195,7 @@ function isValidPublicChat(connectionId, data, counter, signature) {
     }
 
     // Get the counter for the client
-    counter = activeServer.getClientCounter(fingerprint);
+    trackedCounter = activeServer.getClientCounter(fingerprint);
   }
   else {
     // Message coming a client/server that has not properly integrated
@@ -220,7 +221,8 @@ function forwardPublicChat(connectionId, payload) {
     // If sender is a client, ensure public message is not sent back
     if (otherConnId !== connectionId) {
       let ws = getConnection(otherConnId);
-      console.log(`Sending public chat ${JSON.stringify(payload)} to ${connectionId}`)
+      console.log(`Sending public chat ${JSON.stringify(payload)} to client connection ${connectionId}`)
+      
       ws.send(JSON.stringify(payload));
     }
   });
@@ -231,6 +233,7 @@ function forwardPublicChat(connectionId, payload) {
     // If sender is a server, ensure public message is not sent back
     if (serverConnId !== connectionId) {
       let ws = getConnection(serverConnId);
+      console.log(`Sending public chat ${JSON.stringify(payload)} to server connection ${connectionId}`)
       ws.send(JSON.stringify(payload));
     }
   });
