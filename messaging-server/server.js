@@ -225,10 +225,12 @@ const storage = multer.diskStorage({
 
     cb(null, 'uploads/');  
   },
-   
+  
+  
   filename: (_, file, cb) => {
+    console.log("file original name: ", file.originalname)
     // Save file with unique UUID as filename
-    const uniqueFilename = uuidv4() + path.extname(file.originalname);
+    const uniqueFilename = uuidv4() + file.originalname;
     cb(null, uniqueFilename); 
   }
 });
