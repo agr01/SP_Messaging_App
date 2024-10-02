@@ -13,6 +13,8 @@ import { CryptoService } from './crypto.service';
   providedIn: 'root',
 })
 export class WebSocketService {
+
+  private defaultServer: string = process.env['DEFAULT_SERVER'] || "localhost:3000"
   
   // TODO: Put list of servers somewhere else
   private readonly URLs = ['ws://localhost:3000', 'ws://localhost:3001']
@@ -31,6 +33,7 @@ export class WebSocketService {
   constructor(
     private cryptoService: CryptoService
   ) {
+    console.log("Default server:", this.defaultServer);
   }
 
   public connect(){

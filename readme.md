@@ -8,7 +8,10 @@
 
 ## Running the Server
 
-    $env:PORT=3000; node server.js
+    DEPRECATED $env:PORT=3000; node server.js
+    node server.js server1.env
+    node server.js server2.env
+
 
 
 ## Running the Client
@@ -22,3 +25,5 @@ Specifying port
 open on run
 
     --open
+
+    $env:DEFAULT_SERVER=3001; ng serve
