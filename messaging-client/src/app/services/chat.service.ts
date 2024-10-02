@@ -33,35 +33,7 @@ export class ChatService {
     private userService: UserService,
     private signedDataService: SignedDataService
   ) { 
-
-    // TODO: Remove
-    // Add test chat message
-      this.addMessage({
-        sender: "DByaiKOyEu1ZPe75A66HBSkR+a4NFoKTlnO7UeJaVpQ=",
-        recipients: [],
-        isPublic: true,
-        message: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      })
-      this.addMessage({
-        sender: this.userService.getUserFingerprint(),
-        recipients: [],
-        isPublic: true,
-        message: "Public message from me"
-      })
-      this.addMessage({
-        sender: "DByaiKOyEu1ZPe75A66HBSkR+a4NFoKTlnO7UeJaVpQ=",
-        recipients: [],
-        isPublic: true,
-        message: "a regular msg"
-      })
-      this.addMessage({
-        sender: "DByaiKOyEu1ZPe75A66HBSkR+a4NFoKTlnO7UeJaVpQ=",
-        recipients: [],
-        isPublic: true,
-        message: "a"
-      })
-    
-
+ 
     // Listen for incoming messages
     this.webSocketService.messageRecieved$.subscribe((message: any) => {  
       this.processMessage(message);
