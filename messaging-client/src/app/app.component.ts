@@ -7,6 +7,7 @@ import { combineLatest, combineLatestWith, Subscription } from 'rxjs';
 import { UserService } from './services/user.service';
 import { WebSocketService } from './services/web-socket.service';
 import { HeaderComponent } from './components/header/header.component';
+import { DEFAULT_SERVER, DEFAULT_WEBSOCKET } from './constants';
 
 @Component({
   selector: 'app-root',
@@ -32,7 +33,9 @@ export class AppComponent implements OnInit {
    ngOnInit(){
     
     this.cryptoService.generateRsaKeys();
-    this.webSocketService.connect();
+    
+    console.log("Default server:", DEFAULT_WEBSOCKET);
+    this.webSocketService.connect(DEFAULT_WEBSOCKET);
 
     // Subscribe to websocket connection status
     // If ! connected -> show loading spinner

@@ -5,20 +5,18 @@ import { ChatData } from '../models/chat-data';
 import { PublicChat } from '../models/public-chat';
 import { SignedData } from '../models/signed-data';
 import { CryptoService } from './crypto.service';
-
-
+import { DEFAULT_SERVER, DEFAULT_WEBSOCKET, SERVERS } from '../constants';
 
 
 @Injectable({
   providedIn: 'root',
 })
 export class WebSocketService {
-
-  private defaultServer: string = process.env['DEFAULT_SERVER'] || "localhost:3000"
   
   // TODO: Put list of servers somewhere else
-  private readonly URLs = ['ws://localhost:3000', 'ws://localhost:3001']
   private currentUrlIndex = 0;
+  private webSocketUrls: string[] = SERVERS.map(s => "ws://" + s)
+  private defaultWebSocketUrl = DEFAULT_WEBSOCKET
   
   private webSocket!: WebSocket; 
 
@@ -33,19 +31,16 @@ export class WebSocketService {
   constructor(
     private cryptoService: CryptoService
   ) {
-    console.log("Default server:", this.defaultServer);
   }
 
-  public connect(){
+  public connect(webSocketUrl: string){
     
-    const url = this.URLs[this.currentUrlIndex];
+    console.log(`Connecting to ${webSocketUrl}`);
 
-    console.log(`Connecting to ${url}`);
-
-    this.webSocket = new WebSocket(url);
+    this.webSocket = new WebSocket(webSocketUrl);
 
     this.webSocket.onopen = () => {
-      console.log(`Connected to ${url}`);
+      console.log(`Connected to ${webSocketUrl}`);
       this.connectionIsOpen.next(true);
     };
 
@@ -73,28 +68,39 @@ export class WebSocketService {
     this.webSocket.onclose = (event) => {
       console.log(`WebSocket closed: ${event.code}, reason: ${event.reason}`);
       this.connectionIsOpen.next(false);
-      this.reconnect(); // Attempt to reconnect
+      
+      // Attempt to reconnect
+      this.reconnect(webSocketUrl)
     };
   }
 
   // Tries to establish a websocket connection with a different server
   // If an attempt to connect has been made to all servers, waits 5 seconds before trying to reconnect
-  private reconnect() {
-    
-    // set server url to next server
-    this.currentUrlIndex = (this.currentUrlIndex + 1) % this.URLs.length;
+  private reconnect(prevServerUrl: string) {
 
+    // If last server was not default - try connecting to default first
+    if (prevServerUrl !== this.defaultWebSocketUrl){
+      this.connect(this.defaultWebSocketUrl);
+      return;
+    }
+
+    // Else try a different server from the list
+    let newServerUrl = this.webSocketUrls[this.currentUrlIndex]
+    
     // If all servers tried -> reconnect with timeout
     if (this.currentUrlIndex == 0){
       console.log("Reconnect after 5 seconds...")
-      setTimeout(() => this.connect(), 5000); // Retry after 5 seconds
+      setTimeout(() => this.connect(newServerUrl), 5000); // Retry after 5 seconds
     }
 
     // otherwise try new server immediately
     else {
       console.log("Reconnecting...")
-      this.connect();
+      this.connect(newServerUrl);
     }
+
+    // set server url to next server
+    this.currentUrlIndex = (this.currentUrlIndex + 1) % this.webSocketUrls.length;
   }
 
 

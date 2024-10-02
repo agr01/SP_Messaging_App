@@ -26,4 +26,4 @@ open on run
 
     --open
 
-    $env:DEFAULT_SERVER=3001; ng serve
+    $env:DEFAULT_SERVER="localhost:3001"; ng serve
