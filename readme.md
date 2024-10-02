@@ -35,27 +35,25 @@ To run a one of instance of the client, ensure you are in the messaging-client d
 - To upload a file click the paper clip icon next to the send button.
 - To download a file, paste the download link in your browser.
 
-Specifying port:
-```ng serve --port 4201```
+Specifying port: ```ng serve --port 4201```
     
-Specifying a messaging-server to connect to:
-```$env:DEFAULT_SERVER="localhost:3001"; ng serve```
+Specifying a messaging-server to connect to: ```$env:DEFAULT_SERVER="localhost:3001"; ng serve```
 
-To open default browser on run:
-```ng serve --port 4201 --open```
+To open default browser on run: ```ng serve --port 4201 --open```
 
-Full example
-```$env:DEFAULT_SERVER="localhost:3001"; ng serve --port 4201 --open```
+Full example: ```$env:DEFAULT_SERVER="localhost:3001"; ng serve --port 4201 --open```
 
 ## Simulated environment
 
 Below is a list of commands that spin up a simulated environment where you can test all of the functionality for yourself. This will require 6 separate terminals.
 
-For steps 1 and 2 open terminals in or change to the messaging-server directory.
+For steps 1 and 2 open terminals in or change to the messaging-server directory:
+
 1. In terminal 1, run ```node server.js server1.env```
 2. In terminal 2, run ```node server.js server2.env```
 
-For steps 3-6 open terminals in or change to the messaging-client directory.
+For steps 3-6 open terminals in or change to the messaging-client directory: 
+
 3. In terminal 3, run ```$env:DEFAULT_SERVER="localhost:3000"; ng serve --port 4200 --open```
 4. In terminal 4, run ```$env:DEFAULT_SERVER="localhost:3000"; ng serve --port 4201 --open```
 5. In terminal 5, run ```$env:DEFAULT_SERVER="localhost:3001"; ng serve --port 4202 --open```
