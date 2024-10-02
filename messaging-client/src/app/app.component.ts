@@ -35,7 +35,7 @@ export class AppComponent implements OnInit {
     this.cryptoService.generateRsaKeys();
     
     console.log("Default server:", DEFAULT_WEBSOCKET);
-    this.webSocketService.connect(DEFAULT_WEBSOCKET);
+    this.webSocketService.connect();
 
     // Subscribe to websocket connection status
     // If ! connected -> show loading spinner

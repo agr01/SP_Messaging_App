@@ -432,14 +432,14 @@ function processClientListReq (host) {
 function processClientUpdate(connectionId, publicKeys) {
   
   // Check whether there is active server
-  let activeServer = getActiveServer(connectionId);
-  if (activeServer === undefined) {
+  const activeServer = getActiveServer(connectionId);
+  if (!activeServer) {
     console.log(`Could not find active server for ${connectionId}, resending server_hello`);
     return false;
   }
 
   // Check whether publicKeys is an array
-  if (publicKeys === undefined || !publicKeys instanceof Array) {
+  if ( !publicKeys || !publicKeys instanceof Array) {
     console.log(`Parsed data clients was not an array, defaulting to empty`);
     return false;
   }
@@ -453,9 +453,8 @@ function processClientUpdate(connectionId, publicKeys) {
         return;
       }
 
-      // Add new clientInfo to the active server 
       updateClientInfos.push(
-        new ClientInfo(publicKey, activeServer.getCounter(publicKey))
+        new ClientInfo(publicKey, activeServer.getClientCounter(publicKey))
       );
     }); 
   }

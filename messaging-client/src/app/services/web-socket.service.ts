@@ -15,8 +15,9 @@ export class WebSocketService {
   
   // TODO: Put list of servers somewhere else
   private currentUrlIndex = 0;
-  private webSocketUrls: string[] = SERVERS.map(s => "ws://" + s)
-  private defaultWebSocketUrl = DEFAULT_WEBSOCKET
+  private currentWebSocketUrl: string = DEFAULT_WEBSOCKET
+  private readonly webSocketUrls: string[] = SERVERS.map(s => "ws://" + s)
+  private readonly defaultWebSocketUrl: string = DEFAULT_WEBSOCKET
   
   private webSocket!: WebSocket; 
 
@@ -33,14 +34,14 @@ export class WebSocketService {
   ) {
   }
 
-  public connect(webSocketUrl: string){
+  public connect(){
     
-    console.log(`Connecting to ${webSocketUrl}`);
+    console.log(`Connecting to ${this.currentWebSocketUrl}`);
 
-    this.webSocket = new WebSocket(webSocketUrl);
+    this.webSocket = new WebSocket(this.currentWebSocketUrl);
 
     this.webSocket.onopen = () => {
-      console.log(`Connected to ${webSocketUrl}`);
+      console.log(`Connected to ${this.currentWebSocketUrl}`);
       this.connectionIsOpen.next(true);
     };
 
@@ -52,7 +53,7 @@ export class WebSocketService {
         // All incoming messages should have a type
         if (!message || !message.type) return;
         
-        console.log("Recieved message", message)
+        console.log(`Recieved message from ${this.currentWebSocketUrl}`, message)
         this.messageReceived.next(message); 
       } catch (error) {
         console.error(`Error parsing websocket message\nError:`, error)
@@ -70,33 +71,36 @@ export class WebSocketService {
       this.connectionIsOpen.next(false);
       
       // Attempt to reconnect
-      this.reconnect(webSocketUrl)
+      this.reconnect()
     };
   }
 
   // Tries to establish a websocket connection with a different server
   // If an attempt to connect has been made to all servers, waits 5 seconds before trying to reconnect
-  private reconnect(prevServerUrl: string) {
+  private reconnect() {
+
+    const prevServerUrl = this.currentWebSocketUrl
 
     // If last server was not default - try connecting to default first
     if (prevServerUrl !== this.defaultWebSocketUrl){
-      this.connect(this.defaultWebSocketUrl);
+      this.currentWebSocketUrl = this.defaultWebSocketUrl;
+      this.connect();
       return;
     }
 
     // Else try a different server from the list
-    let newServerUrl = this.webSocketUrls[this.currentUrlIndex]
+    this.currentWebSocketUrl = this.webSocketUrls[this.currentUrlIndex]
     
     // If all servers tried -> reconnect with timeout
     if (this.currentUrlIndex == 0){
       console.log("Reconnect after 5 seconds...")
-      setTimeout(() => this.connect(newServerUrl), 5000); // Retry after 5 seconds
+      setTimeout(() => this.connect(), 5000); // Retry after 5 seconds
     }
 
     // otherwise try new server immediately
     else {
       console.log("Reconnecting...")
-      this.connect(newServerUrl);
+      this.connect();
     }
 
     // set server url to next server
@@ -112,7 +116,7 @@ export class WebSocketService {
     }
     
     // TODO: REMOVE
-    console.log("sending message: ", message);
+    console.log(`sending message to ${this.currentWebSocketUrl}: `, message);
 
     this.webSocket.send(JSON.stringify(message));
   }

@@ -8,7 +8,8 @@ const {
   parseJson,
   isValidCounter,
   isValidBase64Signature,
-  isValidPublicKey
+  isValidPublicKey,
+  ActiveServerInfo
 } = require('./helper.js'); 
 
 const {
@@ -61,15 +62,15 @@ const validPayloadTypes = ["signed_data", "client_list_request", "client_update_
 /* --- WebSocket Connection and Event Handling --- */
 
 // Function to setup websocket event handling logic 
-function setupWebSocketEvents(ws, host, type, connectionId) {
+function setupWebSocketEvents(ws, host, type, connectionId, address) {
   ws.isAlive = true;
 
   if (type === "Server") {
     ws.on("open", () => {
       console.log("Successfully established connection to server");
-      // generate server hello
-      let serverHello = 
-      
+      // Add server to active servers
+      upsertActiveServer(connectionId, new ActiveServerInfo(address, []))
+      // generate server hello      
       ws.send(JSON.stringify(generateServerHello(host)));
 
       // Send a client update request
@@ -180,7 +181,7 @@ function joinNeighbourhood () {
     console.log(`New connection: ${connectionId}`);
 
     // Setup websocket events
-    setupWebSocketEvents(wsClient, host, "Server", connectionId);
+    setupWebSocketEvents(wsClient, host, "Server", connectionId, address);
 
     addConnection(connectionId, wsClient);
   });
