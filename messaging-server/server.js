@@ -1,35 +1,24 @@
 const express = require('express');
-const http = require('http');
+const https = require('https');
 const WebSocket = require('ws');
+const fs = require('fs');
+const multer = require('multer');
 const dotenv = require('dotenv');
 const path = require('path')
 const { v4: uuidv4 } = require('uuid');
 const { 
   parseJson,
-  isValidCounter,
-  isValidBase64Signature,
-  isValidPublicKey,
   ActiveServerInfo
 } = require('./helper.js'); 
 
 const {
   addConnection,
-  getConnection,
-  getConnections,
   deleteConnection,
-  upsertClient,
-  getClient,
-  getClients,
   isClient,
   deleteClient,
-  upsertActiveServer,
-  getActiveServer,
-  getActiveServers,
   isActiveServer,
   deleteActiveServer,
   getNeighbourhood,
-  getNeighbourhoodServerPublicKey,
-  isInNeighbourhood,
   initialiseKeys,
   insertNeighbourhoodServer
 } = require("./server-state.js");
@@ -51,9 +40,15 @@ const port = process.env.PORT || 3000;
 const host = process.env.HOST || "localhost:3000";
 initialiseKeys();
 
+// Setup https using server private and public key
+const httpsOptions = {
+  key: fs.readFileSync(path.join(__dirname, 'ssl', 'server.key')),
+  cert: fs.readFileSync(path.join(__dirname, 'ssl', 'server.cert'))
+};
+
 // Setup servers
 const app = express()
-const server = http.createServer(app);
+const server = https.createServer(httpsOptions, app);
 const wss = new WebSocket.Server({ server });
 
 // List of valid payload types that can be received
@@ -68,6 +63,8 @@ function setupWebSocketEvents(ws, host, type, connectionId, address) {
   if (type === "Server") {
     ws.on("open", () => {
       console.log("Successfully established connection to server");
+      // generate server hello
+      
       // Add server to active servers
       upsertActiveServer(connectionId, new ActiveServerInfo(address, []))
       // generate server hello      
@@ -165,6 +162,8 @@ wss.on('connection', (ws, req) => {
   addConnection(connectionId, ws);
 });
 
+/* --- Neighbourhood Websocket client Setup --- */
+
 // Function to open a websocket connection to all listed neighbourhood servers
 function joinNeighbourhood () {
   serverList = getNeighbourhood();
@@ -206,13 +205,62 @@ function setupNeighbourhood () {
   }
 }
 
+/* --- HTTPS File Upload/Download --- */
+
+// Set up file storage
+const storage = multer.diskStorage({
+  // directory where files will be saved
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');  
+  },
+   
+  filename: (_, file, cb) => {
+    // Save file with unique UUID as filename
+    const uniqueFilename = uuidv4() + path.extname(file.originalname);
+    cb(null, uniqueFilename); 
+  }
+});
+
+// Set a size limit 25 MB
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 25 * 1024 * 1024  
+  }
+});
+
+// Endpoint to handle file uploads
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  // Check file was actually attached
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  }
+
+  // Generate a download URL based on the uploaded file's name (UUID)
+  const fileUrl = `https://${host}/api/download/${req.file.filename}`;
+  const body = { file_url: fileUrl }
+
+
+  res.status(200).send(body);
+});
+
+// Endpoint to download files
+app.get('/api/download/:uuid', (req, res) => {
+  const filePath = path.join(__dirname, 'uploads', req.params.uuid);
+
+  // Check if the file exists
+  if (fs.existsSync(filePath)) {
+    // Respond with the file download
+    res.download(filePath);
+  } 
+  else {
+    res.status(404).send('File not found.');
+  }
+});
+
 server.listen(port, () => {
-  console.log(`Listening at localhost:${port}`);
+  console.log(`Listening at https://localhost:${port}`);
 });
 
 setupNeighbourhood();
 joinNeighbourhood();
-
-// app.get('/', function (req, res) {
-//   res.send('Hello World')
-// })
