@@ -33,10 +33,6 @@ export class SignedDataService {
 
     console.log("Received signed data", signedData)
 
-    // TODO: Validate signature
-
-    // TODO: Validate counter
-
     return signedData.data
   }
   async sendAsSignedData(data: Hello | ChatData | PublicChat ){

@@ -9,7 +9,6 @@ import { WebSocketService } from './web-socket.service';
 })
 export class FileService implements OnDestroy{
 
-  // TODO: Match connected websocket server
   private uploadServer: string = DEFAULT_SERVER;
 
   private uploadUrl = 'http://' + DEFAULT_SERVER;
@@ -37,6 +36,7 @@ export class FileService implements OnDestroy{
 
   uploadFile(file: File): Observable<any> {
     const formData: FormData = new FormData();
+       
     formData.append('file', file, file.name);
 
     return this.http.post(this.uploadUrl, formData);
