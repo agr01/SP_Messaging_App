@@ -116,7 +116,6 @@ function isValidPublicKey(publicKey) {
   // Attempt to generate a valid public key in pem format
   try {
     crypto.createPublicKey(publicKey);
-    console.log("Public key is valid");
     return true;
   }
   catch (e) {
@@ -151,7 +150,6 @@ function isValidBase64Signature (signature, publicKey, data) {
       signatureBuffer
     );
     
-    console.log('Signature validation result:', isValid);
     return isValid;
   }
   catch (e) {
