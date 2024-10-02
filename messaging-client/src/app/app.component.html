@@ -4,13 +4,7 @@
   @if(connecting || settingUpUser){
     <div class="flex flex-col justify-center items-center h-full w-full">
       
-      <!-- Spinner Source: https://tw-elements.com/docs/standard/components/spinners/ -->
-      <div 
-      class="inline-block h-20 w-20 rounded-full 
-      border-8 border-solid border-current border-e-transparent 
-      align-[-0.125em] 
-      animate-spin text-surface
-      text-accent-1"></div>
+      <app-spinner class="h-20 w-20"/>
 
       <div class="p-7 text-center space-y-2">
         @if (connecting){

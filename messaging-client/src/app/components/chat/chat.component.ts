@@ -5,25 +5,38 @@ import { RecipientService } from '../../services/client.service';
 import { combineLatestWith, Subscription, take } from 'rxjs';
 import { UserService } from '../../services/user.service';
 import { ChatMessage } from '../../models/chat-message';
+import { FileService } from '../../services/file.service';
+import { isNonEmptyString } from '../../helpers/validators';
+import { SpinnerComponent } from "../spinner/spinner.component";
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, SpinnerComponent],
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.css'
 })
 export class ChatComponent implements OnDestroy{
 
   @ViewChild('inputBox', { static: false }) inputBox!: ElementRef;
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   
   private displayChatSubscription: Subscription
   private displayedChats: ChatMessage[] = []
 
+  public showFileSelector: boolean = false;
+
+  public selectedFile: File | null = null;
+  public uploadedFileUrl: string | null = null;
+  public fileUploadErrorMessage: string | null = null;
+
+  public fileUploading: boolean = false;
+
   constructor(
     private chatService: ChatService,
     private clientService: RecipientService,
-    public userService: UserService
+    public userService: UserService,
+    private fileService: FileService
   ) { 
     // Send the server hello message once both the connection is established and the 
     // RSA keys are generated
@@ -37,7 +50,6 @@ export class ChatComponent implements OnDestroy{
 
   // Sets the value of displayChats, filtering chat messeges based on the selected particilpant(s)
   private updateDisplayedMessages(messages: ChatMessage[], selectedRecipients: Set<string>){
-    console.log("updating displayed messages using", messages, selectedRecipients);
 
     // Return all public messages if public chat is selected
     if (this.clientService.publicRecipientSelected()){
@@ -66,8 +78,6 @@ export class ChatComponent implements OnDestroy{
         return true;
       }
     )
-
-    console.log("New displayed messages: ", this.displayedChats)
   } 
 
   ngOnDestroy(): void {
@@ -86,7 +96,6 @@ export class ChatComponent implements OnDestroy{
     
     // Send message if selected recipient is public
     if (this.clientService.publicRecipientSelected()){
-      console.log("Sending public message")
       this.chatService.sendPublicMessage(text);
     }
 
@@ -102,5 +111,55 @@ export class ChatComponent implements OnDestroy{
 
   public getDisplayMessages(){
     return this.displayedChats;
+  }
+
+  public onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+    }
+  }
+
+  public onFileSubmit(): void {
+    if (!this.selectedFile) {
+      console.error("No file selected");
+      return;
+    }
+
+    this.fileUploading = true;
+    
+    this.fileService.uploadFile(this.selectedFile).pipe(take(1)).subscribe({
+      next: (response) => {
+        this.fileUploading = false;
+        this.processFileUploadResponse(response);
+      },
+      error: (error) => {
+        this.fileUploading = false;
+        this.fileUploadErrorMessage = "File upload failed"
+        console.error('File upload failed:', error);
+      },
+    });
+  }
+
+  private processFileUploadResponse(response: any){
+    
+        if (!response || !response.body || !response.body.file_url) return;
+        if (!isNonEmptyString(response.body.file_url)) return;
+
+        this.uploadedFileUrl = response.body.file_url
+        console.log('File uploaded successfully!', response);
+  }
+
+  public toggleFileSelector(){
+
+    this.uploadedFileUrl = null;
+    this.fileUploadErrorMessage = null;
+
+    this.showFileSelector = !this.showFileSelector;
+
+    if (!this.showFileSelector){
+      this.fileInput.nativeElement.value = ''
+      this.selectedFile = null;
+    }
   }
 }

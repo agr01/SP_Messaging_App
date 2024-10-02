@@ -74,9 +74,6 @@ export class CryptoService {
     );
     
     this._rsaOaepKeyPair = {privateKey: rsaOaepPrivateKey, publicKey: rsaOaepPublicKey}
-    
-    // TODO: Remove
-    console.log(`generated keys`)
 
     this.rsaKeysGenerated.next(true);
   }

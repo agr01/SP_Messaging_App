@@ -25,7 +25,6 @@ export class SidebarComponent implements OnDestroy {
     this.selectedClientSubscription = this.clientService.selectedRecipientFingerprints$.subscribe(
       (c) => {
         this.selectedClients = c
-        console.log("Selected clients", this.selectedClients)
       }
     );
   }
@@ -35,7 +34,6 @@ export class SidebarComponent implements OnDestroy {
   }
 
   public toggleSelectedClient(clientFingerprint: string){
-    console.log("Toggling", clientFingerprint)
 
     this.clientService.toggleSelectedRecipient(clientFingerprint)
   }

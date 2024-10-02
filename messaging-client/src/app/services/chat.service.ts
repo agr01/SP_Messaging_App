@@ -58,11 +58,8 @@ export class ChatService {
 
   // Sanitize public chat message & add to messages
   private processPublicChat(message: any){
-    console.log("Processing public chat", message);
     const publicChat = sanitizePublicChat(message);
     if (!publicChat) return;
-
-    console.log("Adding public chat to messages")
 
     this.addMessage(this.publicChatToChatMessage(publicChat))
   }
@@ -99,16 +96,13 @@ export class ChatService {
       try {
         aesKey = await this.cryptoService.decryptRsa(chatData.symm_keys[i])
       } catch (error) {
-        console.log("Failed to decrypt aes key:", error)
         continue;
       }
 
       // Attempt to decrypt message
       try {
-        // Use decrypted aes key to decrypt message
         decryptedChatString = await this.cryptoService.decryptAes(aesKey, chatData.iv, chatData.chat);
       } catch (error) {
-        console.log("Faled to decrypt chat:", error);
         continue;
       }
       
@@ -137,8 +131,6 @@ export class ChatService {
 
   // Adds a message to the messages subject & emits to observers
   private addMessage(message:ChatMessage){
-    
-    console.log("Message added to chat service:",message)
 
     let newMessages = this._messagesSubject.getValue()
     newMessages.push(message);

@@ -41,7 +41,6 @@ export class RecipientService implements OnDestroy {
       ([webSocketOpen, rsaKeyGenerated]) =>{
 
         if (webSocketOpen && rsaKeyGenerated){
-          console.log("Sending hello");
           this.sendHello();
           this.sendClientRequest();
         }
@@ -54,8 +53,7 @@ export class RecipientService implements OnDestroy {
       message => this.checkForClientListUpdate(message)
     );
 
-    // TODO: PUT BACK to 5 secs
-    // Send a client request every 5 seconds
+    // Send a client request every 10 seconds
     this.resendClientRequestSubscription = interval(10000).subscribe(
       ()=>this.sendClientRequest()
     )
@@ -198,8 +196,7 @@ export class RecipientService implements OnDestroy {
     this._selectedRecipientFingerprintsSubject.next(newSelectedRecipients);
   }
 
-  // BUG - will drop any clients in selected clients that are no longer online
-  // TODO - Fix selected clients so that offline clients are dropped
+  // Returns an array of recipients that are selected in the sidebar
   public getSelectedRecipients(): Client[]{
     const selectedRecipientFingerprints = this._selectedRecipientFingerprintsSubject.value;
     const onlineClients = this._onlineClients.value;

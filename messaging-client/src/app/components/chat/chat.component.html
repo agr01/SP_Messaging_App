@@ -31,13 +31,74 @@
   }
   
 </div>
+
 <!-- Input row -->
 <div class="flex flex-row w-full gap-2 min-w-0 h-min p-10">
+ 
+  <!-- Chat input box -->
   <div #inputBox contentEditable="true" class="w-full max-w-full break-words whitespace-normal p-2.5 overflow-hidden border text-sm rounded-lg 
-                focus:border-accent-1 focus:outline-none bg-dark-4 border-dark-5 text-white shadow-lg"></div>
+  focus:border-accent-1 focus:outline-none bg-dark-4 border-dark-5 text-white shadow-lg"></div>
 
+  <!-- Send button -->
   <button (click)="onSendClicked()"
     class="self-end w-min h-min rounded-lg px-5 py-2.5 text-center font-semibold accent-1 accent-1-hover shadow-lg">
     Send
   </button>
+
+  <!-- Upload File Button -->
+  <button (click)="toggleFileSelector()">
+    <svg class="w-10 h-10" fill="#505050"
+     xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+      <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+      <path d="M364.2 83.8c-24.4-24.4-64-24.4-88.4 0l-184 184c-42.1 42.1-42.1 110.3 0 152.4s110.3 42.1 152.4 0l152-152c10.9-10.9 28.7-10.9 39.6 0s10.9 28.7 0 39.6l-152 152c-64 64-167.6 64-231.6 0s-64-167.6 0-231.6l184-184c46.3-46.3 121.3-46.3 167.6 0s46.3 121.3 0 167.6l-176 176c-28.6 28.6-75 28.6-103.6 0s-28.6-75 0-103.6l144-144c10.9-10.9 28.7-10.9 39.6 0s10.9 28.7 0 39.6l-144 144c-6.7 6.7-6.7 17.7 0 24.4s17.7 6.7 24.4 0l176-176c24.4-24.4 24.4-64 0-88.4z"/>
+    </svg>
+  </button>
+
 </div>
+
+  
+<!-- File selector -->
+<!-- Overlay -->
+<div class="fixed inset-0 w-full h-full bg-[#11111180] flex items-center justify-center" 
+  [class.hidden]="!this.showFileSelector"
+  (click)="toggleFileSelector()">
+
+  <!-- Selector container -->
+  <div class="flex items-center justify-center bg-dark-5 rounded-lg shadow-lg p-5 z-10 pointer-events-auto"
+  (click)="$event.stopPropagation()">
+
+    <!-- Show uploaded file url -->
+    @if(fileUploading){
+      <app-spinner class="h-10 w-10"/>
+    }
+    @else if(uploadedFileUrl){
+      <div>Uploaded file URL: {{this.uploadedFileUrl}}</div>
+    }
+    @else if (fileUploadErrorMessage){
+      <div class="pr-5 py-2">
+        {{fileUploadErrorMessage}}
+      </div>
+      <button 
+          class="rounded-lg px-5 py-2.5 text-center font-semibold accent-1 accent-1-hover shadow-lg"
+          (click)="this.fileUploadErrorMessage = null"
+        >
+          Retry
+        </button>
+    }
+    <!-- Show upload file form -->
+    @else {
+      <form (submit)="onFileSubmit()">
+        <input #fileInput type="file" (change)="onFileSelected($event)" />
+        <button 
+          class="rounded-lg px-5 py-2.5 text-center font-semibold accent-1 accent-1-hover shadow-lg"
+          type="submit" 
+          [class.hidden]="!this.selectedFile">Upload</button>
+      </form> 
+    }
+    
+
+  </div>
+  
+</div>
+  
+   

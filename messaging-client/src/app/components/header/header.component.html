@@ -1,6 +1,9 @@
-<div class="flex flex-row w-full items-center justify-between">
-  <div class="p-5 font-semibold text-xl min-w-0">
+<div class="flex flex-row w-full items-center justify-between px-5">
+  <div class="py-5 font-semibold text-xl min-w-0">
     OLAF's Neighbourhood
+    <div class="text-[0.8rem] text-gray-400">
+      Connected to {{this.webSocketService.currentWebSocketUrl$ | async}}
+    </div>
   </div>
-  <div class="px-5 py-2 overflow-ellipsis">{{userFingerprint}}</div>
+  <div class="py-2 overflow-ellipsis">{{userFingerprint}}</div>
 </div>

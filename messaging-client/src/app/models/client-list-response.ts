@@ -85,6 +85,6 @@ function isValidClient(client: any, serverIndex: number, clientIndex: number): b
     return false;
   }
 
-  return true; // Client is valid
+  return true;
 }
 

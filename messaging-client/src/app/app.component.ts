@@ -8,11 +8,12 @@ import { UserService } from './services/user.service';
 import { WebSocketService } from './services/web-socket.service';
 import { HeaderComponent } from './components/header/header.component';
 import { DEFAULT_SERVER, DEFAULT_WEBSOCKET } from './constants';
+import { SpinnerComponent } from "./components/spinner/spinner.component";
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, ChatComponent, HeaderComponent],
+  imports: [RouterOutlet, SidebarComponent, ChatComponent, HeaderComponent, SpinnerComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -33,8 +34,6 @@ export class AppComponent implements OnInit {
    ngOnInit(){
     
     this.cryptoService.generateRsaKeys();
-    
-    console.log("Default server:", DEFAULT_WEBSOCKET);
     this.webSocketService.connect();
 
     // Subscribe to websocket connection status

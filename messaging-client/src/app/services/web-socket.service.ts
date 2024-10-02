@@ -1,11 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Subject, BehaviorSubject} from 'rxjs';
-import { Hello } from '../models/hello';
-import { ChatData } from '../models/chat-data';
-import { PublicChat } from '../models/public-chat';
-import { SignedData } from '../models/signed-data';
 import { CryptoService } from './crypto.service';
-import { DEFAULT_SERVER, DEFAULT_WEBSOCKET, SERVERS } from '../constants';
+import { DEFAULT_WEBSOCKET, SERVERS } from '../constants';
 
 
 @Injectable({
@@ -13,7 +9,6 @@ import { DEFAULT_SERVER, DEFAULT_WEBSOCKET, SERVERS } from '../constants';
 })
 export class WebSocketService {
   
-  // TODO: Put list of servers somewhere else
   private currentUrlIndex = 0;
   private currentWebSocketUrl: string = DEFAULT_WEBSOCKET
   private readonly webSocketUrls: string[] = SERVERS.map(s => "ws://" + s)
@@ -27,7 +22,8 @@ export class WebSocketService {
   public connectionIsOpen$ = this.connectionIsOpen.asObservable()  
   public messageRecieved$ = this.messageReceived.asObservable()
 
-
+  private currentWebSocketUrlSubject = new BehaviorSubject<string>(this.currentWebSocketUrl); 
+  public currentWebSocketUrl$ = this.currentWebSocketUrlSubject.asObservable();
 
   constructor(
     private cryptoService: CryptoService
@@ -43,6 +39,7 @@ export class WebSocketService {
     this.webSocket.onopen = () => {
       console.log(`Connected to ${this.currentWebSocketUrl}`);
       this.connectionIsOpen.next(true);
+      this.currentWebSocketUrlSubject.next(this.currentWebSocketUrl);
     };
 
     // On message - alert listeners
@@ -53,7 +50,8 @@ export class WebSocketService {
         // All incoming messages should have a type
         if (!message || !message.type) return;
         
-        // console.log(`Received message from ${this.currentWebSocketUrl}`, message)
+        console.log(`Received message from ${this.currentWebSocketUrl}`, message)
+
         this.messageReceived.next(message); 
       } catch (error) {
         console.error(`Error parsing websocket message\nError:`, error)
@@ -111,11 +109,10 @@ export class WebSocketService {
   send(message: any) {
 
     if(!this.webSocket || this.webSocket.readyState !== WebSocket.OPEN){
-      console.error("Could not send websocket message");
+      console.error("Could not send websocket message:", message);
       return
     }
     
-    // TODO: REMOVE
     console.log(`sending message to ${this.currentWebSocketUrl}: `, message);
 
     this.webSocket.send(JSON.stringify(message));
