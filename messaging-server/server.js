@@ -39,7 +39,8 @@ const {
   processClientUpdate,
   generateClientUpdate,
   generateClientUpdateReq,
-  generateServerHello
+  generateServerHello,
+  sendClientUpdates
 } = require("./protocol.js")
 
 // Get the env file and setup config
@@ -131,6 +132,7 @@ function setupWebSocketEvents(ws, host, type, connectionId) {
     if (isClient(connectionId)){
       console.log(`Client ${connectionId} removed from client list`);
       deleteClient(connectionId);
+      sendClientUpdates();
     }
     
     // Cleanup external server information

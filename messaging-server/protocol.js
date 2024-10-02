@@ -338,6 +338,7 @@ function processSignedData (connectionId, payload, host) {
         payload.counter,
         payload.signature
       );
+      sendClientUpdates();
       console.log(`ProcessHello returned: ${message}` ) 
       return;
 
@@ -480,6 +481,18 @@ function generateClientUpdate() {
   return clientUpdate;
 }
 
+// Generates client updates to send to all active servers
+function sendClientUpdates() {
+
+  // Get connected servers
+  const activeServers = getActiveServers(); 
+  activeServers.forEach((_, connectionId) => {
+    let ws = getConnection(connectionId);
+    ws.send(JSON.stringify(generateClientUpdate())) 
+  });
+}
+
+
 // Generate Client Update Request
 // Returns a ClientUpdateRequest 
 function generateClientUpdateReq() {
@@ -505,5 +518,6 @@ module.exports = {
   processClientUpdate,
   generateClientUpdate,
   generateClientUpdateReq,
-  generateServerHello
+  generateServerHello,
+  sendClientUpdates
 }
