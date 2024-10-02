@@ -270,7 +270,7 @@ function isValidChat(connectionId, data, counter, signature) {
     // When connection is a client, publicKey and counter can just be retrieved
     let client = getClient(connectionId);
     publicKey = client.publicKey;
-    counter = client.counter;
+    trackedCounter = client.counter;
   }
   else {
     // Message coming a client/server that has not properly integrated
@@ -297,11 +297,11 @@ function forwardChat(connectionId, host, payload) {
   if (dests.includes(host)) {
     // For each client currently connected to the server, distribute the message
     const otherClients = getClients(); 
-    otherClients.forEach((_, otherConnId) => { 
+    otherClients.forEach((connectionInfo, otherConnId) => { 
       // If sender is a client, ensure public message is not sent back
       if (otherConnId !== connectionId) {
         let ws = getConnection(otherConnId);
-        console.log(`Forwarding chat to ${connectionId}`);
+        console.log(`Forwarding chat to ${connectionInfo.fingerprint}`);
         ws.send(JSON.stringify(payload));
       }
     });

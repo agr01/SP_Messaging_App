@@ -105,40 +105,52 @@ export class ChatService {
     if (!chatData) return;
     
     // Decrypt message
-   
+    const chat = await this.decryptChat(chatData);
+    if (!chat){
+      console.log("Could not decrypt chat data")
+      return;
+    }
+
+    // Add message to chat messages
+    this.addMessage(this.chatToChatMessage(chat));
+  }
+
+  private async decryptChat(chatData: ChatData): Promise<Chat | null>{
+    
     let aesKey = ""
     let decryptedChatString = ""
     let decryptedChat = null
-    let i = 0
-    // Attempt to decrypt each encryptied aes key
-    while(i < MAX_GROUP_CHAT_SIZE && i < chatData.symm_keys.length){
+    // Attempt to decrypt message with each encrypted symm_key
+    for(let i = 0; i < MAX_GROUP_CHAT_SIZE && i < chatData.symm_keys.length; i++){
+      
+      // Attempt to decrypt symm key
       try {
         aesKey = await this.cryptoService.decryptRsa(chatData.symm_keys[i])
       } catch (error) {
-        console.error("Error decrypting aes key", error)
+        console.log("Failed to decrypt aes key:", error)
+        continue;
       }
 
-      // Use decrypted aes key to decrypt message
-      decryptedChatString = await this.cryptoService.decryptAes(aesKey, chatData.iv, chatData.chat);
+      // Attempt to decrypt message
+      try {
+        // Use decrypted aes key to decrypt message
+        decryptedChatString = await this.cryptoService.decryptAes(aesKey, chatData.iv, chatData.chat);
+      } catch (error) {
+        console.log("Faled to decrypt chat:", error);
+        continue;
+      }
       
       // Attempt to json parse decrypted message
       // The message decrypted using the correct aes key should be a json string
       decryptedChat = parseJson(decryptedChatString)
+      
       // If json is successfully parsed - assume the aes key has been successfully decrypted
-      if (decryptedChat !== null) break;
+      if (decryptedChat) {
+        return sanitizeChat(decryptedChat);
+      };
     }
 
-    if (!decryptedChat){
-      console.log("Could not decrypt chat message", chatData)
-      return;
-    }
-
-    // Sanitize decrypted Chat
-    const chat = sanitizeChat(decryptedChat);
-    if (!chat) return;
-
-    // Add message to chat messages
-    this.addMessage(this.chatToChatMessage(chat));
+    return null;
   }
 
   private chatToChatMessage(c: Chat): ChatMessage{

@@ -31,6 +31,8 @@ export class SignedDataService {
       return null
     };
 
+    console.log("Received signed data", signedData)
+
     // TODO: Validate signature
 
     // TODO: Validate counter

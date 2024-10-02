@@ -110,6 +110,8 @@ export class RecipientService implements OnDestroy {
 
     let containsUser = false;
 
+    let newSelectedRecipients = new Set<string>
+
     // Add each client
     for (const server of list.servers){
       for (const clientPublicKey of server.clients){
@@ -131,6 +133,10 @@ export class RecipientService implements OnDestroy {
           publicKey: clientPublicKey, 
           serverAddress: server.address
         })
+
+        // Add client to selected recipients if selected
+        const selectedRecipients = this.getSelectedRecipientFingerprints();
+        if (selectedRecipients.has(fingerprint)) newSelectedRecipients.add(fingerprint);
       }
     }
 
@@ -140,7 +146,11 @@ export class RecipientService implements OnDestroy {
       this.sendClientRequest();
     }
 
+    // update online client list
     this._onlineClients.next(newClientList);
+
+    // update selected recipients based on online client list
+    this.updateSelectedRecipients(newSelectedRecipients);
   }
 
  
@@ -148,7 +158,7 @@ export class RecipientService implements OnDestroy {
   // otherwise removes the client from the set
   public toggleSelectedRecipient(clientFingerprint: string){
 
-    let selectedClients = this._selectedRecipientFingerprintsSubject.getValue()
+    let selectedRecipientFingerprints = this.getSelectedRecipientFingerprints();
 
     // If setting to public chat, replace all with public
     // A group cannot contain public
@@ -161,19 +171,31 @@ export class RecipientService implements OnDestroy {
 
     // Clear public if it is in the list of selected clients
     // If public is in the list of selected clients it should always be the only selected client
-    if (selectedClients.has("public")){
-      selectedClients.clear()
+    if (selectedRecipientFingerprints.has("public")){
+      selectedRecipientFingerprints.clear()
     }
 
     // Toggle
-    if (selectedClients.has(clientFingerprint)) {
-      selectedClients.delete(clientFingerprint);
+    if (selectedRecipientFingerprints.has(clientFingerprint)) {
+      selectedRecipientFingerprints.delete(clientFingerprint);
       // If selected clients is empty - default to public
-      if (selectedClients.size < 1) selectedClients.add("public")
+      if (selectedRecipientFingerprints.size < 1) selectedRecipientFingerprints.add("public")
     }
-    else selectedClients.add(clientFingerprint);
+    else selectedRecipientFingerprints.add(clientFingerprint);
 
-    this._selectedRecipientFingerprintsSubject.next(selectedClients);
+    this.updateSelectedRecipients(selectedRecipientFingerprints);
+  }
+
+  public getSelectedRecipientFingerprints(){
+    return this._selectedRecipientFingerprintsSubject.getValue();
+  }
+
+  // Updates the set of selected recipient fingerprints
+  private updateSelectedRecipients(newSelectedRecipients: Set<string>){
+    // Select public if new selected recipients is empty
+    if (newSelectedRecipients.size == 0) newSelectedRecipients.add("public");
+
+    this._selectedRecipientFingerprintsSubject.next(newSelectedRecipients);
   }
 
   // BUG - will drop any clients in selected clients that are no longer online

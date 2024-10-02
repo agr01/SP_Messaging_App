@@ -53,7 +53,7 @@ export class WebSocketService {
         // All incoming messages should have a type
         if (!message || !message.type) return;
         
-        console.log(`Recieved message from ${this.currentWebSocketUrl}`, message)
+        // console.log(`Received message from ${this.currentWebSocketUrl}`, message)
         this.messageReceived.next(message); 
       } catch (error) {
         console.error(`Error parsing websocket message\nError:`, error)
