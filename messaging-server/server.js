@@ -1,10 +1,10 @@
 const express = require('express');
-const https = require('https');
+const https = require('https')
 const WebSocket = require('ws');
 const fs = require('fs');
 const multer = require('multer');
 const dotenv = require('dotenv');
-const path = require('path')
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const { 
   parseJson,
@@ -17,6 +17,7 @@ const {
   isClient,
   deleteClient,
   isActiveServer,
+  upsertActiveServer,
   deleteActiveServer,
   getNeighbourhood,
   initialiseKeys,
@@ -47,7 +48,7 @@ const httpsOptions = {
 };
 
 // Setup servers
-const app = express()
+const app = express();
 const server = https.createServer(httpsOptions, app);
 const wss = new WebSocket.Server({ server });
 
@@ -175,7 +176,7 @@ function joinNeighbourhood () {
     }
 
     // Initialise websocket connection to address
-    const wsClient = new WebSocket("ws://"+ address);
+    const wsClient = new WebSocket("wss://"+ address, { rejectUnauthorized: false });
     const connectionId = uuidv4();
     console.log(`New connection: ${connectionId}`);
 
@@ -259,7 +260,7 @@ app.get('/api/download/:uuid', (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`Listening at https://localhost:${port}`);
+  console.log(`Listening for https file uploads at https://localhost:${port}`);
 });
 
 setupNeighbourhood();
