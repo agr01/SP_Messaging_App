@@ -64,8 +64,6 @@ export class ChatService {
     this.addMessage(this.publicChatToChatMessage(publicChat))
   }
 
-  
-  // TODO: Add group chat limit to readme
   // Note: This client restricts the max group size to limit resources
   // spent on attempting to decrypt symm_keys
   private async processChat(message: any){
@@ -90,7 +88,7 @@ export class ChatService {
     let decryptedChatString = ""
     let decryptedChat = null
     // Attempt to decrypt message with each encrypted symm_key
-    for(let i = 0; i < MAX_GROUP_CHAT_SIZE && i < chatData.symm_keys.length; i++){
+    for(let i = 0; i < chatData.symm_keys.length; i++){
       
       // Attempt to decrypt symm key
       try {

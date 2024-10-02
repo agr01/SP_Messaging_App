@@ -8,6 +8,7 @@ import { ChatMessage } from '../../models/chat-message';
 import { FileService } from '../../services/file.service';
 import { isNonEmptyString } from '../../helpers/validators';
 import { SpinnerComponent } from "../spinner/spinner.component";
+import { CryptoService } from '../../services/crypto.service';
 
 @Component({
   selector: 'app-chat',
@@ -36,7 +37,8 @@ export class ChatComponent implements OnDestroy{
     private chatService: ChatService,
     private clientService: RecipientService,
     public userService: UserService,
-    private fileService: FileService
+    private fileService: FileService,
+    public cryptoService: CryptoService
   ) { 
     // Send the server hello message once both the connection is established and the 
     // RSA keys are generated
