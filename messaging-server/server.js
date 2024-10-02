@@ -1,5 +1,5 @@
 const express = require('express');
-const https = require('https');
+const http = require('http');
 const WebSocket = require('ws');
 const fs = require('fs');
 const multer = require('multer');
@@ -16,6 +16,7 @@ const {
   deleteConnection,
   isClient,
   deleteClient,
+  upsertActiveServer,
   isActiveServer,
   deleteActiveServer,
   getNeighbourhood,
@@ -48,7 +49,7 @@ const httpsOptions = {
 
 // Setup servers
 const app = express()
-const server = https.createServer(httpsOptions, app);
+const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 // List of valid payload types that can be received
@@ -259,7 +260,7 @@ app.get('/api/download/:uuid', (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`Listening at https://localhost:${port}`);
+  console.log(`Listening at http://localhost:${port}`);
 });
 
 setupNeighbourhood();

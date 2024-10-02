@@ -221,8 +221,6 @@ function forwardPublicChat(connectionId, payload) {
     // If sender is a client, ensure public message is not sent back
     if (otherConnId !== connectionId) {
       let ws = getConnection(otherConnId);
-      console.log(`Sending public chat ${JSON.stringify(payload)} to client connection ${connectionId}`)
-      
       ws.send(JSON.stringify(payload));
     }
   });
@@ -233,7 +231,6 @@ function forwardPublicChat(connectionId, payload) {
     // If sender is a server, ensure public message is not sent back
     if (serverConnId !== connectionId) {
       let ws = getConnection(serverConnId);
-      console.log(`Sending public chat ${JSON.stringify(payload)} to server connection ${connectionId}`)
       ws.send(JSON.stringify(payload));
     }
   });
@@ -280,7 +277,7 @@ function isValidChat(connectionId, data, counter, signature) {
 
   // Check for valid message
   if (!isValidMessage(publicKey, data, signature, counter, trackedCounter)) {
-    console.log("Invalid message detected, exiting")
+    console.log("Invalid message detected, exiting");
     return false;
   }
 
@@ -292,7 +289,7 @@ function isValidChat(connectionId, data, counter, signature) {
 function forwardChat(connectionId, host, payload) {
   const dests = payload.data.destination_servers;
 
-  console.log(`Checking whether host ${host} is included`)
+  console.log(`Checking whether host ${host} is included`);
   // Don't send chat to other clients unless destinations includes host
   if (dests.includes(host)) {
     // For each client currently connected to the server, distribute the message
@@ -347,6 +344,7 @@ function processSignedData (connectionId, payload, host) {
 
       // Process server_hello message
       case "server_hello":
+        console.log(`Processing server_hello message`);
         let success = processServerHello(
           connectionId,
           payload.data,
