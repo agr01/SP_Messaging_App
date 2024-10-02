@@ -31,27 +31,38 @@ export class ChatComponent implements OnDestroy{
       combineLatestWith(this.clientService.selectedRecipientFingerprints$)
     ).subscribe(
       ([messages, selectedClientFingerprints]) => 
-        this.updateDisplayMessages(messages, selectedClientFingerprints)
+        this.updateDisplayedMessages(messages, selectedClientFingerprints)
     );
   }
 
   // Sets the value of displayChats, filtering chat messeges based on the selected particilpant(s)
-  private updateDisplayMessages(messages: ChatMessage[], selectedRecipients: Set<string>){
+  private updateDisplayedMessages(messages: ChatMessage[], selectedRecipients: Set<string>){
     console.log("updating displayed messages using", messages, selectedRecipients);
 
+    // Return all public messages if public chat is selected
+    if (this.clientService.publicRecipientSelected()){
+      this.displayedChats = messages.filter(m => m.isPublic);
+      return;
+    }
+
+    const userFingerprint = this.userService.getUserFingerprint();
+
+    // Otherwise filter based on sender & recipients
     this.displayedChats = messages.filter(
       (message)=>{
-        // Return all public messages if public chat is selected
-        if (this.clientService.publicRecipientSelected()) 
-          return message.isPublic;
-
-        else if (message.isPublic) return false;
+        if (message.isPublic) return false;
 
         // Filter out messages that do not contain all selected recipients
         for (const selectedRecipient of selectedRecipients){
           const containsSelected = message.recipients.includes(selectedRecipient) || message.sender == selectedRecipient;
           if (!containsSelected) return false;
         }
+        // Filter out messages that countain recipients that are not selected
+        for (const recipient of message.recipients){
+          if (recipient !== userFingerprint && !selectedRecipients.has(recipient)) return false;
+        }
+        if (message.sender !== userFingerprint && !selectedRecipients.has(message.sender)) return false
+
         return true;
       }
     )
