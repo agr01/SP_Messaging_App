@@ -131,7 +131,8 @@ export class ChatComponent implements OnDestroy{
     this.fileService.uploadFile(this.selectedFile).pipe(take(1)).subscribe({
       next: (response) => {
         this.fileUploading = false;
-        this.processFileUploadResponse(response);
+        const success = this.processFileUploadResponse(response);
+        if (!success) this.fileUploadErrorMessage = "File upload failed";
       },
       error: (error) => {
         this.fileUploading = false;
@@ -141,13 +142,16 @@ export class ChatComponent implements OnDestroy{
     });
   }
 
-  private processFileUploadResponse(response: any){
-    
-        if (!response || !response.body || !response.body.file_url) return;
-        if (!isNonEmptyString(response.body.file_url)) return;
+  // Returns true on success
+  private processFileUploadResponse(response: any): boolean{
 
-        this.uploadedFileUrl = response.body.file_url
-        console.log('File uploaded successfully!', response);
+    if (!response || !response.body || !response.body.file_url) return false;
+    if (!isNonEmptyString(response.body.file_url)) return false;
+
+    this.uploadedFileUrl = response.body.file_url
+    console.log('File uploaded successfully', response);
+    
+    return true;
   }
 
   public toggleFileSelector(){
