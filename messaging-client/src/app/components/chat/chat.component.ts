@@ -120,6 +120,7 @@ export class ChatComponent implements OnDestroy{
     }
   }
 
+  // Uploads the selected file
   public onFileSubmit(): void {
     if (!this.selectedFile) {
       console.error("No file selected");

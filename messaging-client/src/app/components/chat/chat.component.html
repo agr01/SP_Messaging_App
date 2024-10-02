@@ -14,7 +14,7 @@
           <div class="text-[.75rem] text-gray-400 w-full truncate pb-0.5">
             {{chatMessage.sender}}
           </div>
-          <div>{{chatMessage.message}}</div>
+          <div [innerHTML]="chatMessage.message"></div>
         </div>
       </div>
       
@@ -23,7 +23,7 @@
     @else {
       <!-- Sent -->
       <div class="flex justify-end pb-6 min-w-0">
-        <div class="py-2 accent-1 chat-bubble chat-bubble-container">
+        <div class="py-2 accent-1 chat-bubble chat-bubble-container" >
           {{chatMessage.message}}
         </div>
       </div>
@@ -76,10 +76,8 @@
     @else if(uploadedFileUrl){
       <div class="flex flex-col">
         <div class="mx-auto font-semibold pb-4">File uploaded successfully!</div>
-        <div>Access link: {{this.uploadedFileUrl}}</div>
+        <div>Access link: <a href="this.uploadedFileUrl" [innerHTML]="this.uploadedFileUrl"></a></div>
       </div>
-        
-      
     }
     @else if (fileUploadErrorMessage){
       <div class="pr-5 py-2">

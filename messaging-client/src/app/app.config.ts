@@ -3,11 +3,14 @@ import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
 import { provideHttpClient } from '@angular/common/http';
+import { DomSanitizer } from '@angular/platform-browser';
+import { CustomSanitizationService } from './services/custom-sanitization.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }), 
     provideRouter(routes),
     provideHttpClient(),
+    { provide: DomSanitizer, useClass: CustomSanitizationService }
   ]
 };
