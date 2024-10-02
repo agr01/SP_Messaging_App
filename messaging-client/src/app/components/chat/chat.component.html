@@ -66,7 +66,7 @@
   (click)="toggleFileSelector()">
 
   <!-- Selector container -->
-  <div class="flex items-center justify-center bg-dark-5 rounded-lg shadow-lg p-5 z-10 pointer-events-auto"
+  <div class="max-w-[70%] flex items-center justify-center bg-dark-5 rounded-lg shadow-lg p-5 z-10 pointer-events-auto"
   (click)="$event.stopPropagation()">
 
     <!-- Show uploaded file url -->
@@ -74,7 +74,12 @@
       <app-spinner class="h-10 w-10"/>
     }
     @else if(uploadedFileUrl){
-      <div>Uploaded file URL: {{this.uploadedFileUrl}}</div>
+      <div class="flex flex-col">
+        <div class="mx-auto font-semibold pb-4">File uploaded successfully!</div>
+        <div>Access link: {{this.uploadedFileUrl}}</div>
+      </div>
+        
+      
     }
     @else if (fileUploadErrorMessage){
       <div class="pr-5 py-2">

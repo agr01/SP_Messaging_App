@@ -10,6 +10,7 @@ const {
   parseJson,
   ActiveServerInfo
 } = require('./helper.js'); 
+const cors = require('cors');
 
 const {
   addConnection,
@@ -51,6 +52,7 @@ const httpsOptions = {
 const app = express()
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
+app.use(cors());
 
 // List of valid payload types that can be received
 const validPayloadTypes = ["signed_data", "client_list_request", "client_update_request", "client_update"]
@@ -212,6 +214,15 @@ function setupNeighbourhood () {
 const storage = multer.diskStorage({
   // directory where files will be saved
   destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, 'uploads/');
+
+    // Check if the directory exists
+    if (!fs.existsSync(uploadPath)) {
+      console.log("creating /uploads dir")
+      // Create the directory if it does not exist
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+
     cb(null, 'uploads/');  
   },
    
@@ -234,14 +245,17 @@ const upload = multer({
 app.post('/api/upload', upload.single('file'), (req, res) => {
   // Check file was actually attached
   if (!req.file) {
+    console.log("No file uploaded")
     return res.status(400).send('No file uploaded.');
   }
 
+  console.log("Uploading file", req.file)
+
   // Generate a download URL based on the uploaded file's name (UUID)
-  const fileUrl = `https://${host}/api/download/${req.file.filename}`;
+  const fileUrl = `http://${host}/api/download/${req.file.filename}`;
   const body = { file_url: fileUrl }
 
-
+  console.log("Sending response:", body);
   res.status(200).send(body);
 });
 
