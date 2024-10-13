@@ -1,45 +1,34 @@
 const express = require('express');
-const http = require('http');
+const http = require('http')
+const https = require('https')
 const WebSocket = require('ws');
 const fs = require('fs');
 const multer = require('multer');
 const dotenv = require('dotenv');
-const path = require('path')
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-const { 
-  parseJson,
-  ActiveServerInfo
-} = require('./helper.js'); 
 const cors = require('cors');
 
 const {
+  setupWebSocketEvents
+} = require('./websocket-events.js');
+
+const {
   addConnection,
-  deleteConnection,
-  isClient,
-  deleteClient,
-  upsertActiveServer,
-  isActiveServer,
-  deleteActiveServer,
   getNeighbourhood,
   initialiseKeys,
   insertNeighbourhoodServer
-} = require("./server-state.js");
+} = require('./server-state.js');
 
-const {
-  processSignedData,
-  processClientListReq,
-  processClientUpdate,
-  generateClientUpdate,
-  generateClientUpdateReq,
-  generateServerHello,
-  sendClientUpdates
-} = require("./protocol.js")
 
 // Get the env file and setup config
 const ENV_FILE = process.argv[2] || 'server1.env';
 dotenv.config({ path: path.resolve(__dirname, ENV_FILE)});
-const port = process.env.PORT || 3000;
-const host = process.env.HOST || "localhost:3000";
+const httpPort = process.env.PORT || 3000;
+const httpHost = `localhost:${httpPort}`;
+const httpsPort = parseInt(httpPort, 10) + 100;
+const httpsHost = `localhost:${httpsPort}`;
+const hosts = [httpHost, httpsHost];
 initialiseKeys();
 
 // Setup https using server private and public key
@@ -49,119 +38,44 @@ const httpsOptions = {
 };
 
 // Setup servers
-const app = express()
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-app.use(cors());
+// HTTP Setup (for interfacing with non HTTPS servers)
+const httpApp = express();
+const httpServer = http.createServer(httpApp);
+const httpWss = new WebSocket.Server({ server: httpServer });
+httpApp.use(cors());
 
-// List of valid payload types that can be received
-const validPayloadTypes = ["signed_data", "client_list_request", "client_update_request", "client_update"]
+// HTTPS Setup
+const httpsApp = express();
+const httpsServer = https.createServer(httpsOptions, httpsApp);
+const httpsWss = new WebSocket.Server({ server: httpsServer });
+httpsApp.use(cors());
 
-/* --- WebSocket Connection and Event Handling --- */
+/* Websocket connection handling */
 
-// Function to setup websocket event handling logic 
-function setupWebSocketEvents(ws, host, type, connectionId, address) {
-  ws.isAlive = true;
-
-  if (type === "Server") {
-    ws.on("open", () => {
-      console.log("Successfully established connection to server");
-      // generate server hello
-      
-      // Add server to active servers
-      upsertActiveServer(connectionId, new ActiveServerInfo(address, []))
-      // generate server hello      
-      ws.send(JSON.stringify(generateServerHello(host)));
-
-      // Send a client update request
-      ws.send(JSON.stringify(generateClientUpdateReq()));
-    });
-  }
-  
-  // Listen for messages from the client
-  ws.on('message', (message) => {
-
-    let reply;
-    // Check WebSocket message is a json payload
-    const payload = parseJson(message);
-    if (payload === undefined) {
-      console.log("Invalid message/JSON");
-      return;
-    }
-
-    // Check whether the payload type is valid
-    if (payload.type === undefined || !validPayloadTypes.includes(payload.type)) {
-      console.log("Payload type was invalid or missing");
-      return;
-    }
-    
-    // If payload is of type "signed_data"
-    if (payload.type === "signed_data") {
-      reply = processSignedData(connectionId, payload, host);
-    }
-
-    // If payload is of type "client_list_request"
-    if (payload.type === "client_list_request") {
-      reply = processClientListReq(host);
-    }
-
-    // If payload is of type "client_update_request"
-    if (payload.type === "client_update_request") { 
-      reply = JSON.stringify(generateClientUpdate());
-    }
-
-    // If payload is of type "client_update"
-    if (payload.type === "client_update") {
-      let success = processClientUpdate(connectionId, payload.clients);
-      if (!success) {
-        console.log(`Failure with client update. Closing bad connection`);
-        ws.close();
-      }
-    }
-
-    if (reply !== undefined) {
-      console.log(`Sending message reply for ${payload.type} to ${connectionId}`);
-      ws.send(reply);
-    }
-  });
-
-  // Handle client disconnection
-  ws.on('close', () => {
-    console.log(`Client ${connectionId} disconnected`);
-    
-    // Cleanup public keys provided by client
-    if (isClient(connectionId)){
-      console.log(`Client ${connectionId} removed from client list`);
-      deleteClient(connectionId);
-      sendClientUpdates();
-    }
-    
-    // Cleanup external server information
-    if (isActiveServer(connectionId)){
-      console.log(`Server ${connectionId} removed from connected servers list`);
-      deleteActiveServer(connectionId);
-    }
-
-    // Cleanup WebSocket connection for client
-    // Potential security flaw - don't cleanup connection
-    deleteConnection(connectionId);
-  });
-
-  ws.on('error', (error) => {
-    console.log(`Client ${connectionId} experienced an error: ${JSON.stringify(error)}`);
-  });
-}
-
-// Accepts websocket connections
+// Accepts HTTP WebSocket (ws://) connections
 // Handle messages (including parsing and validation)
 // Handles disconnection
-wss.on('connection', (ws, req) => {
+httpWss.on('connection', (ws, req) => {
   // Generate a unique ID for each connection and store connection info
   const connectionId = uuidv4();
   console.log(`New connection: ${connectionId}`);
 
   // Setup all the websocket event logic and add the connection
-  setupWebSocketEvents(ws, host, "Client", connectionId);
+  setupWebSocketEvents(ws, hosts, "Client", connectionId);
+  addConnection(connectionId, ws);
+});
+
+
+// Accepts HTTPS WebSocket (wss://) connections
+// Handle messages (including parsing and validation)
+// Handles disconnection
+httpsWss.on('connection', (ws, req) => {
+  // Generate a unique ID for each connection and store connection info
+  const connectionId = uuidv4();
+  console.log(`New connection: ${connectionId}`);
+
+  // Setup all the websocket event logic and add the connection
+  setupWebSocketEvents(ws, hosts, "Client", connectionId);
   addConnection(connectionId, ws);
 });
 
@@ -173,17 +87,17 @@ function joinNeighbourhood () {
   serverList.forEach((_, address) => {
     
     // Don't establish connection to self
-    if (address === host) {
+    if (hosts.includes(address)) {
       return;
     }
 
     // Initialise websocket connection to address
-    const wsClient = new WebSocket("ws://"+ address);
+    const wsClient = new WebSocket("wss://"+ address, { rejectUnauthorized: false });
     const connectionId = uuidv4();
     console.log(`New connection: ${connectionId}`);
 
     // Setup websocket events
-    setupWebSocketEvents(wsClient, host, "Server", connectionId, address);
+    setupWebSocketEvents(wsClient, hosts, "Server", connectionId, address);
 
     addConnection(connectionId, wsClient);
   });
@@ -244,7 +158,17 @@ const upload = multer({
 });
 
 // Endpoint to handle file uploads
-app.post('/api/upload', upload.single('file'), (req, res) => {
+httpApp.post('/api/upload', upload.single('file'), (req, res) => {
+  res.status(400).send("File upload not permitted over http");
+});
+
+// Endpoint to download files
+httpApp.get('/api/download/:uuid', (req, res) => {
+  res.status(400).send("File download not permitted over http");
+});
+
+// Endpoint to handle file uploads
+httpsApp.post('/api/upload', upload.single('file'), (req, res) => {
   // Check file was actually attached
   if (!req.file) {
     console.log("No file uploaded")
@@ -254,7 +178,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   console.log("Uploading file", req.file)
 
   // Generate a download URL based on the uploaded file's name (UUID)
-  const fileUrl = `http://${host}/api/download/${req.file.filename}`;
+  const fileUrl = `https://${httpsHost}/api/download/${req.file.filename}`;
   const body = { file_url: fileUrl }
 
   console.log("Sending response:", body);
@@ -262,7 +186,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 });
 
 // Endpoint to download files
-app.get('/api/download/:uuid', (req, res) => {
+httpsApp.get('/api/download/:uuid', (req, res) => {
   const filePath = path.join(__dirname, 'uploads', req.params.uuid);
 
   // Check if the file exists
@@ -275,8 +199,12 @@ app.get('/api/download/:uuid', (req, res) => {
   }
 });
 
-server.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}`);
+httpServer.listen(httpPort, () => {
+  console.log(`Listening for https requests at http://localhost:${httpPort}`);
+});
+
+httpsServer.listen(httpsPort, () => {
+  console.log(`Listening for https requests at https://localhost:${httpsPort}`);
 });
 
 setupNeighbourhood();
