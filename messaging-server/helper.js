@@ -50,11 +50,9 @@ class ActiveServerInfo {
     );
 
     // If found, return clients public key
-    if (client !== undefined) {
-      return client.publicKey;
-    } 
-
-    return undefined;
+    if (!client) return undefined;
+    
+    return client.publicKey;
   }
 }
 
@@ -128,7 +126,7 @@ function isValidPublicKey(publicKey) {
 function isValidBase64Signature (signature, publicKey, data) {
   // Check for undefined
   if (signature === undefined) {
-    console.log("Signature was undefined");
+    console.error("Signature was undefined");
     return false;
   }
 
@@ -150,7 +148,6 @@ function isValidBase64Signature (signature, publicKey, data) {
       signatureBuffer
     );
     
-    console.log('Signature validation result:', isValid);
     return isValid;
   }
   catch (e) {
