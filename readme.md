@@ -98,9 +98,9 @@ bash (untested - code was developed using windows): ```DEFAULT_SERVER="localhost
 
 To immediatly open the web app in your default browser, add the --open flag: ```ng serve --open```
 
-Full example
-powershell: ```$env:DEFAULT_SERVER="localhost:3001"; ng serve --port 4201 --open```
-cmd: ```set DEFAULT_SERVER="localhost:3001" && ng serve --port 4201 --open```
-bash (untested): ```DEFAULT_SERVER="localhost:3001" ng serve --port 4201 --open```
+Full examples:</br>
+powershell: ```$env:DEFAULT_SERVER="localhost:3001"; ng serve --port 4201 --open```</br>
+cmd: ```set DEFAULT_SERVER="localhost:3001" && ng serve --port 4201 --open```</br>
+bash (untested): ```DEFAULT_SERVER="localhost:3001" ng serve --port 4201 --open```</br>
 
 
