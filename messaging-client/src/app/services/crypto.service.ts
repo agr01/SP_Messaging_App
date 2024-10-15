@@ -25,6 +25,7 @@ export class CryptoService {
   private _rsaPssKeyPair: CryptoKeyPair | undefined
   private _rsaOaepKeyPair: CryptoKeyPair | undefined
   
+  
   // Emits when RSA keys are generated
   // Used to send server hello only when both the keys are generated and the connection is open
   private rsaKeysGenerated = new BehaviorSubject<boolean>(false); 
@@ -82,7 +83,7 @@ export class CryptoService {
   // Returns base64 encoded ciphertext
   public async encryptRsa(publicKeyPem: string, data: string): Promise<string> {
     
-    const publicKey = await this.pemToCryptoKey(publicKeyPem);
+    const publicKey = await this.pemToEncryptCryptoKey(publicKeyPem);
 
     const uint8Message = new TextEncoder().encode(data);
     const encrypted = await window.crypto.subtle.encrypt(
@@ -286,28 +287,64 @@ export class CryptoService {
             .replace(/\s+/g, '');
   }
 
-  
-  private async pemToCryptoKey(pem: string) {
+  private async pemToEncryptCryptoKey(pem: string) {
     
-    // Remove the PEM header, footer & whitespace
-    const pemFormatted = this.pemToBase64key(pem); 
+    try {
+      // Remove the PEM header, footer & whitespace
+      const pemFormatted = this.pemToBase64key(pem); 
 
-    // Convert base64 key to array buffer
-    const keyBuffer = this.base64toUint8Array(pemFormatted).buffer
+      // Convert base64 key to array buffer
+      const keyBuffer = this.base64toUint8Array(pemFormatted).buffer
+    
+      // Import key
+      const cryptoKey = await window.crypto.subtle.importKey(
+        'spki', 
+        keyBuffer, 
+        {
+          name: RSA_ENCRYPT_ALG,
+          hash: RSA_ENCRYPT_HASH
+        },
+        true, 
+        ['encrypt']
+      );
+    
+      return cryptoKey;
+      
+    } catch (error) {
+      console.error("Error converting pem encryption to crypto key");
+      throw error;
+    }
+    
+  }
   
-    // Import key
-    const cryptoKey = await window.crypto.subtle.importKey(
-      'spki', 
-      keyBuffer, 
-      {
-        name: RSA_ENCRYPT_ALG,
-        hash: RSA_ENCRYPT_HASH
-      },
-      true, 
-      ['encrypt']
-    );
-  
-    return cryptoKey;
+  private async pemToVerifyCryptoKey(pem: string) {
+    
+    try {
+      // Remove the PEM header, footer & whitespace
+      const pemFormatted = this.pemToBase64key(pem); 
+
+      // Convert base64 key to array buffer
+      const keyBuffer = this.base64toUint8Array(pemFormatted).buffer
+    
+      // Import key
+      const cryptoKey = await window.crypto.subtle.importKey(
+        'spki', 
+        keyBuffer, 
+        {
+          name: RSA_SIGN_ALG,
+          hash: RSA_SIGN_HASH
+        },
+        true, 
+        ['verify']
+      );
+    
+      return cryptoKey;
+      
+    } catch (error) {
+      console.error("Error converting pem to verification crypto key");
+      throw error;
+    }
+    
   }
 
   public async getFingerprint(publicKeyPem: string): Promise<string>{ 
@@ -333,5 +370,32 @@ export class CryptoService {
     }
 
     return bytes
+  }
+
+  public async validateSignature(publicKeyPem: string, data: string, base64signature: string): Promise<boolean>{
+
+    const uint8data = new TextEncoder().encode(data);
+    const uint8signature = this.base64toUint8Array(base64signature);
+
+    try {
+      const key = await this.pemToVerifyCryptoKey(publicKeyPem);
+
+      return await window.crypto.subtle.verify(
+        {
+            name: RSA_SIGN_ALG,
+            saltLength: RSA_SIGN_SALT_LENGTH_BYTES,
+            hash: RSA_SIGN_HASH,
+        },
+        key,
+        uint8signature,
+        uint8data
+    );
+      
+    } catch (error) {
+      console.error("Error validating signature:", error)
+      throw error;
+    }
+
+    return true;
   }
 }

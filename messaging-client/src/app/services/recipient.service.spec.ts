@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
-import { RecipientService } from './client.service';
+import { RecipientService } from './recipient.service';
 
-describe('ClientService', () => {
+describe('RecipientService', () => {
   let service: RecipientService;
 
   beforeEach(() => {

@@ -6,6 +6,7 @@ import { PublicChat } from '../models/public-chat';
 import { CryptoService } from './crypto.service';
 import { WebSocketService } from './web-socket.service';
 import { ChatService } from './chat.service';
+import { RecipientService } from './recipient.service';
 
 
 // Manages signed data counter
@@ -22,41 +23,26 @@ export class SignedDataService {
   ) {
   }
 
-  // Validates the signed data & returns the data it contains
-  public async processSignedData(message: any){
-    
-    // sanitize data
-    const signedData = sanitizeSignedData(message);
-    if (!signedData) {
-      return null
-    };
 
-    console.log("Received signed data", signedData)
-
-    // TODO: Validate signature
-
-    // TODO: Validate counter
-
-    return signedData.data
-  }
   async sendAsSignedData(data: Hello | ChatData | PublicChat ){
 
     let message = {} as SignedData;
 
     message.type = "signed_data"
-    message.counter = this.getCounter()
+    message.counter = this.getUsersCounter()
     message.data = data;
 
-    let dataToSign = JSON.stringify(data) + message.counter.toString();
+    const dataToSign = JSON.stringify(data) + message.counter.toString();
 
     message.signature = await this.cryptoService.signRsa(dataToSign);
     
     this.webSocketService.send(message);
     
-    this.incrementCounter();
+    this.incrementUsersCounter();
   }
 
-  private getCounter(): number{
+  // Return's the user's counter from localstorage
+  private getUsersCounter(): number{
     
     if (localStorage.getItem("counter") === null){
       localStorage.setItem("counter", "0");
@@ -67,10 +53,13 @@ export class SignedDataService {
     return parseInt(localStorage.getItem("counter") ?? "0");
   }
 
-
-  private incrementCounter(){
+  // Incrememnts the user's counter in local storage
+  private incrementUsersCounter(){
     let counter = parseInt(localStorage.getItem("counter") ?? "0");
-    counter++
+    
+    if (counter < Number.MAX_SAFE_INTEGER)
+      counter++
+    
     localStorage.setItem("counter", counter.toString());
   }
 }

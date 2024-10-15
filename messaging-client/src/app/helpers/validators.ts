@@ -27,5 +27,5 @@ export function isNonEmptyStringArray(obj: any): boolean {
 }
 
 export function isNumber(value: any): boolean {
-  return typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value);
+  return typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value) && value < Number.MAX_SAFE_INTEGER;
 }

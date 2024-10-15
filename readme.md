@@ -56,6 +56,12 @@ bash (untested):
 6. In terminal 6, run ```DEFAULT_SERVER="localhost:3001" ng serve --port 4203 --open```
 
 
+## Client App Usage
+To send a public message, select public from the sidebar.<\br>
+To send a private message, select any recipient from the sidebar.<\br>
+To send a private group message, select multiple recipients from the sidebar.<\br>
+To view group messages, you must select all recipients in the group.<\br>
+
 
 # Running individual clients / servers
 
@@ -102,5 +108,3 @@ Full examples:</br>
 powershell: ```$env:DEFAULT_SERVER="localhost:3001"; ng serve --port 4201 --open```</br>
 cmd: ```set DEFAULT_SERVER="localhost:3001" && ng serve --port 4201 --open```</br>
 bash (untested): ```DEFAULT_SERVER="localhost:3001" ng serve --port 4201 --open```</br>
-
-

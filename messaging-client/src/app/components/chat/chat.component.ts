@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { ChatService } from '../../services/chat.service';
 import { FormsModule } from '@angular/forms';
-import { RecipientService } from '../../services/client.service';
+import { RecipientService } from '../../services/recipient.service';
 import { combineLatestWith, Subscription, take } from 'rxjs';
 import { UserService } from '../../services/user.service';
 import { ChatMessage } from '../../models/chat-message';
@@ -34,14 +34,14 @@ export class ChatComponent implements OnDestroy{
 
   constructor(
     private chatService: ChatService,
-    private clientService: RecipientService,
+    private recipientService: RecipientService,
     public userService: UserService,
     private fileService: FileService
   ) { 
     // Send the server hello message once both the connection is established and the 
     // RSA keys are generated
     this.displayChatSubscription = this.chatService.messages$.pipe(
-      combineLatestWith(this.clientService.selectedRecipientFingerprints$)
+      combineLatestWith(this.recipientService.selectedRecipients$)
     ).subscribe(
       ([messages, selectedClientFingerprints]) => 
         this.updateDisplayedMessages(messages, selectedClientFingerprints)
@@ -52,7 +52,7 @@ export class ChatComponent implements OnDestroy{
   private updateDisplayedMessages(messages: ChatMessage[], selectedRecipients: Set<string>){
 
     // Return all public messages if public chat is selected
-    if (this.clientService.publicRecipientSelected()){
+    if (this.recipientService.publicRecipientSelected()){
       this.displayedChats = messages.filter(m => m.isPublic);
       return;
     }
@@ -95,13 +95,13 @@ export class ChatComponent implements OnDestroy{
     if ( !text || !text.trim().length ) return;
     
     // Send message if selected recipient is public
-    if (this.clientService.publicRecipientSelected()){
+    if (this.recipientService.publicRecipientSelected()){
       this.chatService.sendPublicMessage(text);
     }
 
     // Otherwise send a message to selected clients
     else{
-      const selectedRecipients = this.clientService.getSelectedRecipients();
+      const selectedRecipients = this.recipientService.getSelectedRecipients();
       this.chatService.sendMessage(text, selectedRecipients);
     }
   
