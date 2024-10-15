@@ -25,7 +25,7 @@ C       C
 C       C
 ```
 
-Below is a list of commands that spin up a simulated environment where you can test all of the functionality for yourself. This will require 6 separate terminals.
+This will require 6 separate terminals.
 
 For steps 1 and 2 open terminals in or change to the messaging-server directory:
 
@@ -35,18 +35,21 @@ For steps 1 and 2 open terminals in or change to the messaging-server directory:
 For steps 3-6 open terminals in the messaging-client directory: 
 
 Powershell:
+
 3. In terminal 3, run ```$env:DEFAULT_SERVER="localhost:3000"; ng serve --port 4200 --open```
 4. In terminal 4, run ```$env:DEFAULT_SERVER="localhost:3000"; ng serve --port 4201 --open```
 5. In terminal 5, run ```$env:DEFAULT_SERVER="localhost:3001"; ng serve --port 4202 --open```
 6. In terminal 6, run ```$env:DEFAULT_SERVER="localhost:3001"; ng serve --port 4203 --open```
 
 cmd:
+
 3. In terminal 3, run ```set DEFAULT_SERVER="localhost:3000" && ng serve --port 4200 --open```
 4. In terminal 4, run ```set DEFAULT_SERVER="localhost:3000" && ng serve --port 4201 --open```
 5. In terminal 5, run ```set DEFAULT_SERVER="localhost:3001" && ng serve --port 4202 --open```
 6. In terminal 6, run ```set DEFAULT_SERVER="localhost:3001" && ng serve --port 4203 --open```
 
 bash (untested):
+
 3. In terminal 3, run ```DEFAULT_SERVER="localhost:3000" ng serve --port 4200 --open```
 4. In terminal 4, run ```DEFAULT_SERVER="localhost:3000" ng serve --port 4201 --open```
 5. In terminal 5, run ```DEFAULT_SERVER="localhost:3001" ng serve --port 4202 --open```
