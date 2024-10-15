@@ -9,14 +9,14 @@ export function isNonEmptyString(value: any): boolean {
 export function isValidServerAddress(address: string): boolean {
   const match = serverAddressRegex.test(address);
 
-  if (!match) console.log("Invalid server address:", address);
+  if (!match) console.error("Invalid server address:", address);
   return match;
 }
 
 export function isValidPemKey(key: string): boolean {
   const match = pemKeyRegex.test(key);
 
-  if (!match) console.log("Invalid pem key:", key);
+  if (!match) console.error("Invalid pem key:", key);
   return match;
 }
 

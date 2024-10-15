@@ -67,7 +67,7 @@ function parseJson (wsMsg){
     return JSON.parse(wsMsg);
   }
   catch (e) {
-    console.log(`An error occurred when trying to parse json ${e.message}`);
+    console.error(`An error occurred when trying to parse json ${e.message}`);
   }
 
   return;
@@ -109,14 +109,13 @@ function generateSignature(data) {
 function isValidPublicKey(publicKey) {
   // Check for undefined
   if (publicKey === undefined) {
-    console.log("Public key was undefined");
+    console.error("Public key was undefined");
     return false;
   }
 
   // Attempt to generate a valid public key in pem format
   try {
     crypto.createPublicKey(publicKey);
-    console.log("Public key is valid");
     return true;
   }
   catch (e) {

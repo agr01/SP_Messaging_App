@@ -11,8 +11,8 @@
     @for( client of clients; track client[0]){
        
       <div class="recipientSelectBox bg-dark-3"
-      [class]='this.selectedClients.has(client[0]) ? "accent-1 accent-1-hover": "bg-dark-4 hover:bg-dark-5"'
-      (click)="toggleSelectedClient(client[0])">
+      [class]='this.selectedClients.has(client[1].fingerprint) ? "accent-1 accent-1-hover": "bg-dark-4 hover:bg-dark-5"'
+      (click)="toggleSelectedClient(client[1].fingerprint)">
         
         <div class="flex flex-row w-full h-4">
           <div class="truncate overflow-ellipsis h-full break-all">

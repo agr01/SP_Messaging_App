@@ -108,6 +108,8 @@ export class RecipientService implements OnDestroy {
 
     let containsUser = false;
 
+    let newSelectedRecipients = new Set<string>
+
     // Add each client
     for (const server of list.servers){
       for (const clientPublicKey of server.clients){
@@ -140,6 +142,10 @@ export class RecipientService implements OnDestroy {
 
         // Add client to new online clients list
         newOnlineClients.set(clientPublicKey, client);
+
+        // Add client to selected recipients if selected
+        const selectedRecipients = this._selectedRecipients.value;
+        if (selectedRecipients.has(client.fingerprint)) newSelectedRecipients.add(client.fingerprint);
      
       }
     }
@@ -154,24 +160,21 @@ export class RecipientService implements OnDestroy {
     this._onlineClientsSubject.next(newOnlineClients);
 
     // update selected recipients based on online client list
-    this.recalculateSelectedRecipients();
+    this.updateSelectedRecipients(newSelectedRecipients);
   }
 
  
   // Adds the client to the set of selected if it is not in the set,
   // otherwise removes the client from the set
-  public toggleSelectedRecipient(clientPublicKey: string){
+  public toggleSelectedRecipient(clientFingerprint: string){
 
     let selectedRecipientFingerprints = this.getSelectedRecipientPubKeys();
 
     // If setting to public chat, replace all with public
     // A group cannot contain public
-    if (clientPublicKey === "public"){
+    if (clientFingerprint === "public"){
       this._selectedRecipients.next(new Set(["public"]));
     }
-
-    // Check that the client is in the array of online clients
-    if (!this._onlineClientsSubject.value.has(clientPublicKey)) return;
 
     // Clear public if it is in the list of selected clients
     // If public is in the list of selected clients it should always be the only selected client
@@ -180,31 +183,18 @@ export class RecipientService implements OnDestroy {
     }
 
     // Toggle
-    if (selectedRecipientFingerprints.has(clientPublicKey)) {
-      selectedRecipientFingerprints.delete(clientPublicKey);
+    if (selectedRecipientFingerprints.has(clientFingerprint)) {
+      selectedRecipientFingerprints.delete(clientFingerprint);
       // If selected clients is empty - default to public
       if (selectedRecipientFingerprints.size < 1) selectedRecipientFingerprints.add("public")
     }
-    else selectedRecipientFingerprints.add(clientPublicKey);
+    else selectedRecipientFingerprints.add(clientFingerprint);
 
     this.updateSelectedRecipients(selectedRecipientFingerprints);
   }
 
   public getSelectedRecipientPubKeys(){
     return this._selectedRecipients.value;
-  }
-
-  // Removes any selected recipients that aren't in the list of online clients.
-  private recalculateSelectedRecipients(){
-    let newSelectedRecipients = this._selectedRecipients.value;
-
-    for(const recipient of this._selectedRecipients.value){
-      if (this._onlineClientsSubject.value.has(recipient)){
-        newSelectedRecipients.add(recipient);
-      }
-    }
-
-    this.updateSelectedRecipients(newSelectedRecipients);
   }
 
   // Updates the set of selected recipient fingerprints
@@ -222,7 +212,7 @@ export class RecipientService implements OnDestroy {
     let selectedClients = new Array<Client>
 
     for (const client of this._onlineClientsSubject.value){
-      if (selectedRecipients.has(client[0])){
+      if (selectedRecipients.has(client[1].fingerprint)){
         selectedClients.push(client[1]);
       }
     }
@@ -250,11 +240,8 @@ export class RecipientService implements OnDestroy {
     // Do not allow counters >= max safe int
     if (signedData.counter >= Number.MAX_SAFE_INTEGER)
       return false;
-
-
-    // TODO: REMOVE
-    console.log("Validating signature", signedData);
     
+    // Validate signature
     let sender = this.getClientByFingerprint(senderFingerprint);
     if (!sender){
       console.error("Could not validate sender.\nSender is not in list of online clients.");
@@ -268,15 +255,9 @@ export class RecipientService implements OnDestroy {
     if (!verified){
       console.error("Could not verify message sender.");
       return false;
-    }
-    // TODO: remove
-    else console.log("Signature Verified!")
-    
+    }    
 
-    // TODO: Validate counter
-    // TODO: REMOVE
-    console.log("Validating counter", sender.counter, signedData.counter)
-
+    // Validate counter
     if (signedData.counter <= sender.counter){
       console.error("Invalid message counter");
       return false;

@@ -38,6 +38,7 @@ export class WebSocketService {
 
     this.webSocket = new WebSocket(url);
 
+    // Emit connected server change on successfull open
     this.webSocket.onopen = () => {
       console.log(`Connected to ${this.currentServer}`);
       this.connectionIsOpen.next(true);

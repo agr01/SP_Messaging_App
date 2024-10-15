@@ -9,7 +9,6 @@ import { WebSocketService } from './web-socket.service';
 })
 export class FileService implements OnDestroy{
 
-  // TODO: Match connected websocket server
   private uploadServer: string = DEFAULT_SERVER;
 
   private uploadUrl = 'http://' + DEFAULT_SERVER;
@@ -20,9 +19,9 @@ export class FileService implements OnDestroy{
     private http: HttpClient,
     private webSocketService: WebSocketService,
   ) {
+    // Update file upload server address when connected server changes.
     webSocketService.connectedServer$.subscribe(
       (server) => {
-        // this.updateServer(server);
         this.uploadServer = server;
         this.uploadUrl = 'http://' + server + "/api/upload"
         

@@ -49,8 +49,6 @@ export class ChatService {
     if (!signedData) {
       return null
     };
-    
-    console.log("Received signed data", signedData)
 
     if (!signedData.data || !signedData.data.type) return;
 
@@ -66,14 +64,14 @@ export class ChatService {
   }
 
   // Sanitize public chat message & add to messages
-  private processPublicChat(signedData: SignedData){
+  private async processPublicChat(signedData: SignedData){
     const message = signedData.data;
 
     const publicChat = sanitizePublicChat(message);
     if (!publicChat) return;
 
     // Validate Signature & Counter
-    const valid = this.recipientService.validateSender(publicChat.sender, signedData)
+    const valid = await this.recipientService.validateSender(publicChat.sender, signedData)
 
     if (!valid) return;
 
@@ -87,13 +85,13 @@ export class ChatService {
   private async processChat(signedData: SignedData){
     const message = signedData.data;
 
-    console.log("Processing chat", message)
     const chatData = sanitizeChatData(message);
     if (!chatData) return;
     
     // Decrypt message
     const chat = await this.decryptChat(chatData);
     if (!chat){
+      // not necessarily an error if you are not an intended recipient
       console.log("Could not decrypt chat data")
       return;
     }
@@ -101,7 +99,7 @@ export class ChatService {
     // Validate sender signature & counter
     // chat.participants.at(0) ?? "" is safe as decrypt chat calls sanitizeChat before returning
     // sanitizeChat ensures that the participants list is > 2 and that every entry is a string
-    const valid = this.recipientService.validateSender(chat.participants.at(0) ?? "", signedData)
+    const valid = await this.recipientService.validateSender(chat.participants.at(0) ?? "", signedData)
 
     if (!valid) return;
     
@@ -167,8 +165,6 @@ export class ChatService {
 
     // Create chat object
     const chat = this.createChat(message, recipients);
-
-    console.log("Sending chat:", chat)
 
     // Create chat data
     // Encrypt chat using AES
