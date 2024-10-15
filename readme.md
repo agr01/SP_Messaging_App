@@ -57,10 +57,10 @@ bash (untested):
 
 
 ## Client App Usage
-To send a public message, select public from the sidebar.<\br>
-To send a private message, select any recipient from the sidebar.<\br>
-To send a private group message, select multiple recipients from the sidebar.<\br>
-To view group messages, you must select all recipients in the group.<\br>
+To send a public message, select public from the sidebar.</br>
+To send a private message, select any recipient from the sidebar.</br>
+To send a private group message, select multiple recipients from the sidebar.</br>
+To view group messages, you must select all recipients in the group.</br>
 
 
 # Running individual clients / servers
