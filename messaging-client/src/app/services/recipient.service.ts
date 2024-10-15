@@ -5,7 +5,6 @@ import { ClientListResponse, sanitizeClientListResponse } from '../models/client
 import { CryptoService } from './crypto.service';
 import { BehaviorSubject, combineLatestWith, interval, subscribeOn, Subscription } from 'rxjs';
 import { Client } from '../models/client';
-import { SignedDataService } from './signed-data.service';
 import { SignedData } from '../models/signed-data';
 
 
@@ -32,7 +31,6 @@ export class RecipientService implements OnDestroy {
   constructor(
     private webSocketService: WebSocketService,
     private cryptoService: CryptoService,
-    private signedDataService: SignedDataService
   ) { 
     
     // Send the server hello message once both the connection is established and the 
@@ -77,7 +75,9 @@ export class RecipientService implements OnDestroy {
     helloData.type = "hello";
     helloData.public_key = await this.cryptoService.generateUserPublicKeyPem();
 
-    this.signedDataService.sendAsSignedData(helloData);
+    const signedData = await this.cryptoService.signData(helloData);
+
+    this.webSocketService.send(signedData);
   }
 
   // Sends a client list request message to the server

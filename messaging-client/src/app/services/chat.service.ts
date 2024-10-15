@@ -13,7 +13,6 @@ import { AesEncryptedData } from '../models/aes-encrypted-data';
 import { MAX_GROUP_CHAT_SIZE } from '../constants';
 import { parseJson } from '../helpers/conversion-functions';
 import { Chat, sanitizeChat } from '../models/chat';
-import { SignedDataService } from './signed-data.service';
 import { sanitizeSignedData, SignedData } from '../models/signed-data';
 
 
@@ -32,7 +31,6 @@ export class ChatService {
     private webSocketService: WebSocketService,
     private cryptoService: CryptoService,
     private userService: UserService,
-    private signedDataService: SignedDataService,
     private recipientService: RecipientService
   ) { 
  
@@ -75,7 +73,9 @@ export class ChatService {
     if (!publicChat) return;
 
     // Validate Signature & Counter
-    this.recipientService.validateSender(publicChat.sender, signedData)
+    const valid = this.recipientService.validateSender(publicChat.sender, signedData)
+
+    if (!valid) return;
 
     this.addMessage(this.publicChatToChatMessage(publicChat))
   }
@@ -101,8 +101,10 @@ export class ChatService {
     // Validate sender signature & counter
     // chat.participants.at(0) ?? "" is safe as decrypt chat calls sanitizeChat before returning
     // sanitizeChat ensures that the participants list is > 2 and that every entry is a string
-    this.recipientService.validateSender(chat.participants.at(0) ?? "", signedData)
+    const valid = this.recipientService.validateSender(chat.participants.at(0) ?? "", signedData)
 
+    if (!valid) return;
+    
     // Add message to chat messages
     this.addMessage(this.chatToChatMessage(chat));
   }
@@ -203,7 +205,8 @@ export class ChatService {
     })
 
     // Send as signed data
-    this.signedDataService.sendAsSignedData(chatData);
+    const signedData = await this.cryptoService.signData(chatData);
+    this.webSocketService.send(signedData);
   }
 
   // Creates a chat object given a message and array of recipients
@@ -228,11 +231,13 @@ export class ChatService {
     const userFingerprint = this.userService.getUserFingerprint();
 
     // Send as signed_data
-    this.signedDataService.sendAsSignedData({
+    const signedData = await this.cryptoService.signData({
       type: "public_chat",
       sender: userFingerprint,
       message: message
     } as PublicChat)
+
+    this.webSocketService.send(signedData);
 
     // Add message to messages
     const chatMessage: ChatMessage = {

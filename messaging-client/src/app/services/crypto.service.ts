@@ -2,6 +2,10 @@ import { Injectable } from '@angular/core';
 import {Buffer} from 'buffer';
 import { BehaviorSubject } from 'rxjs';
 import { AesEncryptedData } from '../models/aes-encrypted-data';
+import { SignedData } from '../models/signed-data';
+import { Hello } from '../models/hello';
+import { ChatData } from '../models/chat-data';
+import { PublicChat } from '../models/public-chat';
 
 const AES_ALG = "AES-GCM"
 const AES_KEY_LENGTH_BITS = 128
@@ -24,7 +28,8 @@ export class CryptoService {
 
   private _rsaPssKeyPair: CryptoKeyPair | undefined
   private _rsaOaepKeyPair: CryptoKeyPair | undefined
-  
+
+  private _userCounter = 0;
   
   // Emits when RSA keys are generated
   // Used to send server hello only when both the keys are generated and the connection is open
@@ -397,5 +402,33 @@ export class CryptoService {
     }
 
     return true;
+  }
+
+  public async signData(data: Hello | ChatData | PublicChat ): Promise<SignedData>{
+    
+    try {
+      if (this._userCounter >= Number.MAX_SAFE_INTEGER){
+        throw Error("Cannot sign message. User counter too large.")
+      }
+  
+      let signedData = {} as SignedData;
+  
+      signedData.type = "signed_data"
+      signedData.counter = this._userCounter;
+      signedData.data = data;
+  
+      const dataToSign = JSON.stringify(data) + signedData.counter.toString();
+  
+      signedData.signature = await this.signRsa(dataToSign);
+      
+      this._userCounter++;
+  
+      return signedData;
+      
+    } catch (error) {
+      console.error("Error signing message", error);
+      throw error
+    }
+    
   }
 }
