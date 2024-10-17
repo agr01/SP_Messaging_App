@@ -10,7 +10,7 @@ module.exports = {
         "dark-4":"#272727", 
         "dark-5":"#303030",  // lightest
 
-        "light-1":"#b0bfe6", //abbeed
+        "light-1":"#b0bfe6",
         "light-2":"#6c7da7",
 
         "accent-1":"hsl(336, 56%, 43%)",
@@ -21,10 +21,3 @@ module.exports = {
   },
   plugins: [],
 }
-
-// Blue background colors
-// "dark-1":"#111620", // darkest
-// "dark-2":"#161C29",
-// "dark-3":"#151b2a", 
-// "dark-4":"#1a202f", 
-// "dark-5":"#546694", // lightest

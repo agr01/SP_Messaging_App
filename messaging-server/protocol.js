@@ -1,3 +1,5 @@
+// Group 53: William Godfrey (a1743033) Alexandra Gramss (a1756431)
+
 const {
   getConnections,
   deleteConnection,
