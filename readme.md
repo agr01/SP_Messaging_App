@@ -13,6 +13,7 @@ Windows powershell is preferred.
 2. Install angular. This can be done using by running the following command (in a terminal of your choice) ```npm i @angular/cli```
 3. Run ```npm ci``` in the messaging-server directory. 
 4. Run ```npm ci``` in the messaging-client directory.
+5. Install the self-signed server certificate as a trusted certificate. How this is done will vary between OS's. Located in ```./messaging-server/ssl/```.
 
 ## Simulated environment
 
