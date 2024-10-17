@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { CryptoService } from './crypto.service';
 import { BehaviorSubject, filter, takeWhile } from 'rxjs';
 
+// Manages data about the client using the application - the "user"
+
 @Injectable({
   providedIn: 'root'
 })

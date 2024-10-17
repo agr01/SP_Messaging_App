@@ -50,11 +50,9 @@ class ActiveServerInfo {
     );
 
     // If found, return clients public key
-    if (client !== undefined) {
-      return client.publicKey;
-    } 
-
-    return undefined;
+    if (!client) return undefined;
+    
+    return client.publicKey;
   }
 }
 
@@ -67,7 +65,7 @@ function parseJson (wsMsg){
     return JSON.parse(wsMsg);
   }
   catch (e) {
-    console.log(`An error occurred when trying to parse json ${e.message}`);
+    console.error(`An error occurred when trying to parse json ${e.message}`);
   }
 
   return;
@@ -109,7 +107,7 @@ function generateSignature(data) {
 function isValidPublicKey(publicKey) {
   // Check for undefined
   if (publicKey === undefined) {
-    console.log("Public key was undefined");
+    console.error("Public key was undefined");
     return false;
   }
 
@@ -128,7 +126,7 @@ function isValidPublicKey(publicKey) {
 function isValidBase64Signature (signature, publicKey, data) {
   // Check for undefined
   if (signature === undefined) {
-    console.log("Signature was undefined");
+    console.error("Signature was undefined");
     return false;
   }
 

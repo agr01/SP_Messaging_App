@@ -81,14 +81,14 @@ function isValidMessage (publicKey, data, signature, counter, trackedCounter) {
 
   // Verify counter
   if (!isValidCounter(counter, trackedCounter)) {
-    console.log("Invalid or missing counter.");
+    console.error("Invalid or missing counter.");
     return false;
   }
 
   // Verify signature
   const concat = JSON.stringify(data) + counter.toString();
   if (!isValidBase64Signature(signature, publicKey, concat)){
-    console.log("Invalid or missing signature");
+    console.error("Invalid or missing signature");
     return false;
   }
 
@@ -122,28 +122,27 @@ function processServerHello(connectionId, data, counter, signature) {
   
   // Check whether sender field is valid
   const sender = data.sender;
-  console.log(`Sender field: ${data.sender}`);
   if (sender === undefined || typeof(sender) !== "string") {
-    console.log("Invalid or missing sender field");
+    console.error("Invalid or missing sender field");
     return false;
   }
 
   // Check if server is in the neighbourhood
   if (!isInNeighbourhood(sender)) {
-    console.log("Server sender was not present in the neighbourhood");
+    console.error("Server sender was not present in the neighbourhood");
     return false;
   }
 
   // Check for valid public key  
   const publicKey = getNeighbourhoodServerPublicKey(sender);
   if (!isValidPublicKey(publicKey)) {
-    console.log("Invalid or missing public key");
+    console.error("Invalid or missing public key");
     return false;
   }
 
   // Check for valid server_hello message
   if (!isValidMessage(publicKey, data, signature, counter, -1)) {
-    console.log("Message failed validation");
+    console.error("Message failed validation");
     return false;
   }
     
@@ -163,7 +162,7 @@ function isValidPublicChat(connectionId, data, counter, signature) {
 
   // Ensure that fingerprint is not missing and is a string
   if (typeof(fingerprint) !== "string") {
-    console.log("Sender was invalid type or missing");
+    console.error("Sender was invalid type or missing");
     return false;
   }
 

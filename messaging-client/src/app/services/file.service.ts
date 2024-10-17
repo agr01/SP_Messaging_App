@@ -19,9 +19,9 @@ export class FileService implements OnDestroy{
     private http: HttpClient,
     private webSocketService: WebSocketService,
   ) {
+    // Update file upload server address when connected server changes.
     webSocketService.connectedServer$.subscribe(
       (server) => {
-        // this.updateServer(server);
         this.uploadServer = server;
         this.uploadUrl = 'http://' + server + "/api/upload"
         

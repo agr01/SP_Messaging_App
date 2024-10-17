@@ -5,7 +5,7 @@ import { ClientListResponse, sanitizeClientListResponse } from '../models/client
 import { CryptoService } from './crypto.service';
 import { BehaviorSubject, combineLatestWith, interval, subscribeOn, Subscription } from 'rxjs';
 import { Client } from '../models/client';
-import { SignedDataService } from './signed-data.service';
+import { SignedData } from '../models/signed-data';
 
 
 // Manages online recipients and recipients selected in the sidebar
@@ -20,16 +20,17 @@ export class RecipientService implements OnDestroy {
   private messageRecievedSubscription!: Subscription;
   private resendClientRequestSubscription!: Subscription;
 
-  private _onlineClients = new BehaviorSubject<Array<Client>>([])
-  public readonly onlineClients$ = this._onlineClients.asObservable();
+  // Maps public keys to client objects
+  private _onlineClientsSubject = new BehaviorSubject<Map<string, Client>>(new Map<string, Client>);
+  public readonly onlineClients$ = this._onlineClientsSubject.asObservable();
   
-  private _selectedRecipientFingerprintsSubject = new BehaviorSubject<Set<string>>(new Set(["public"]));
-  public selectedRecipientFingerprints$ = this._selectedRecipientFingerprintsSubject.asObservable();
+  // Tracks recipients selected in the sidebar
+  private _selectedRecipients = new BehaviorSubject<Set<string>>(new Set(["public"]));
+  public selectedRecipients$ = this._selectedRecipients.asObservable();
 
   constructor(
     private webSocketService: WebSocketService,
     private cryptoService: CryptoService,
-    private signedDataService: SignedDataService
   ) { 
     
     // Send the server hello message once both the connection is established and the 
@@ -74,7 +75,9 @@ export class RecipientService implements OnDestroy {
     helloData.type = "hello";
     helloData.public_key = await this.cryptoService.generateUserPublicKeyPem();
 
-    this.signedDataService.sendAsSignedData(helloData);
+    const signedData = await this.cryptoService.signData(helloData);
+
+    this.webSocketService.send(signedData);
   }
 
   // Sends a client list request message to the server
@@ -99,12 +102,9 @@ export class RecipientService implements OnDestroy {
   // client list response.
   private async processClientListResponse(list: ClientListResponse){
     
-    // List to replace old client list
-    let newClientList: Client[] = []
-    // set to check whether each client is unique
-    let uniqueClients = new Set<string>();
-
     const userPublicKey = await this.cryptoService.generateUserPublicKeyPem();
+
+    let newOnlineClients = new Map<string, Client>;
 
     let containsUser = false;
 
@@ -119,33 +119,45 @@ export class RecipientService implements OnDestroy {
           containsUser = true;
           continue;
         } 
-        
-        // Do not add duplicate clients
-        if (uniqueClients.has(clientPublicKey)) continue;
-        
-        // Add client
-        uniqueClients.add(clientPublicKey);
-        const fingerprint = await this.cryptoService.getFingerprint(clientPublicKey);
-        newClientList.push({
-          fingerprint: fingerprint,
-          publicKey: clientPublicKey, 
-          serverAddress: server.address
-        })
+
+        // Check for an existing client
+        let client = this._onlineClientsSubject.value.get(clientPublicKey);
+
+        // If client does not exist, creat a new one
+        if (!client){
+          const fingerprint = await this.cryptoService.getFingerprint(clientPublicKey);
+
+          client = {
+            fingerprint: fingerprint,
+            publicKey: clientPublicKey,
+            serverAddress: server.address,
+            counter: -1
+          }
+        }
+        // If client exists - only update server address
+        // Counter, public key & fingerprint must stay the same
+        else{
+          client.serverAddress = server.address;
+        }
+
+        // Add client to new online clients list
+        newOnlineClients.set(clientPublicKey, client);
 
         // Add client to selected recipients if selected
-        const selectedRecipients = this.getSelectedRecipientFingerprints();
-        if (selectedRecipients.has(fingerprint)) newSelectedRecipients.add(fingerprint);
+        const selectedRecipients = this._selectedRecipients.value;
+        if (selectedRecipients.has(client.fingerprint)) newSelectedRecipients.add(client.fingerprint);
+     
       }
     }
 
-    // Resend hello & client request if clients does not contain sefl
+    // Resend hello & client request if clients does not contain self
     if (!containsUser){
       this.sendHello();
       this.sendClientRequest();
     }
 
     // update online client list
-    this._onlineClients.next(newClientList);
+    this._onlineClientsSubject.next(newOnlineClients);
 
     // update selected recipients based on online client list
     this.updateSelectedRecipients(newSelectedRecipients);
@@ -156,16 +168,13 @@ export class RecipientService implements OnDestroy {
   // otherwise removes the client from the set
   public toggleSelectedRecipient(clientFingerprint: string){
 
-    let selectedRecipientFingerprints = this.getSelectedRecipientFingerprints();
+    let selectedRecipientFingerprints = this.getSelectedRecipientPubKeys();
 
     // If setting to public chat, replace all with public
     // A group cannot contain public
     if (clientFingerprint === "public"){
-      this._selectedRecipientFingerprintsSubject.next(new Set(["public"]));
+      this._selectedRecipients.next(new Set(["public"]));
     }
-
-    // Check that the client is in the array of online clients
-    if (!this._onlineClients.getValue().find(x => x.fingerprint === clientFingerprint)) return;
 
     // Clear public if it is in the list of selected clients
     // If public is in the list of selected clients it should always be the only selected client
@@ -184,8 +193,8 @@ export class RecipientService implements OnDestroy {
     this.updateSelectedRecipients(selectedRecipientFingerprints);
   }
 
-  public getSelectedRecipientFingerprints(){
-    return this._selectedRecipientFingerprintsSubject.getValue();
+  public getSelectedRecipientPubKeys(){
+    return this._selectedRecipients.value;
   }
 
   // Updates the set of selected recipient fingerprints
@@ -193,19 +202,18 @@ export class RecipientService implements OnDestroy {
     // Select public if new selected recipients is empty
     if (newSelectedRecipients.size == 0) newSelectedRecipients.add("public");
 
-    this._selectedRecipientFingerprintsSubject.next(newSelectedRecipients);
+    this._selectedRecipients.next(newSelectedRecipients);
   }
 
   // Returns an array of recipients that are selected in the sidebar
   public getSelectedRecipients(): Client[]{
-    const selectedRecipientFingerprints = this._selectedRecipientFingerprintsSubject.value;
-    const onlineClients = this._onlineClients.value;
+    const selectedRecipients = this._selectedRecipients.value;
 
     let selectedClients = new Array<Client>
 
-    for (const client of onlineClients){
-      if (selectedRecipientFingerprints.has(client.fingerprint)){
-        selectedClients.push(client);
+    for (const client of this._onlineClientsSubject.value){
+      if (selectedRecipients.has(client[1].fingerprint)){
+        selectedClients.push(client[1]);
       }
     }
 
@@ -214,7 +222,59 @@ export class RecipientService implements OnDestroy {
 
   // Returns true if public is selected as the message recipient
   public publicRecipientSelected(): boolean{
-    return this._selectedRecipientFingerprintsSubject.value.has("public");
+    return this._selectedRecipients.value.has("public");
+  }
+
+  public getClientByFingerprint(fingerprint: string): Client | undefined {
+    for (const [pubKey, client] of this._onlineClientsSubject.value.entries()) {
+      if (client.fingerprint === fingerprint) {
+        return client;
+      }
+    }
+    return undefined;
+  }
+  
+  // Validates the sender's signature & counter
+  public async validateSender(senderFingerprint: string, signedData: SignedData): Promise<boolean>{
+
+    // Do not allow counters >= max safe int
+    if (signedData.counter >= Number.MAX_SAFE_INTEGER)
+      return false;
+    
+    // Validate signature
+    let sender = this.getClientByFingerprint(senderFingerprint);
+    if (!sender){
+      console.error("Could not validate sender.\nSender is not in list of online clients.");
+      return false;
+    }
+
+    const dataToValidate = JSON.stringify(signedData.data) + signedData.counter.toString();
+    
+    const verified = await this.cryptoService.validateSignature(sender.publicKey, dataToValidate, signedData.signature);
+
+    if (!verified){
+      console.error("Could not verify message sender.");
+      return false;
+    }    
+
+    // Validate counter
+    if (signedData.counter <= sender.counter){
+      console.error("Invalid message counter");
+      return false;
+    }
+    
+    // Update client's counter
+    sender.counter = signedData.counter;
+    this.addOrUpdateClient(sender);
+
+    return true;
+  }
+
+  private addOrUpdateClient(client: Client){
+    let newOnlineClients = this._onlineClientsSubject.value;
+    newOnlineClients.set(client.publicKey, client);
+
+    this._onlineClientsSubject.next(newOnlineClients);
   }
 
 }
