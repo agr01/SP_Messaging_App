@@ -1,22 +1,17 @@
 // Group 51: William Godfrey (a1743033) Alexandra Gramss (a1756431)
 
 const {
-  getConnections,
-  deleteConnection,
   upsertClient,
   getClient,
   getClients,
   isClient,
-  deleteClient,
   upsertActiveServer,
   getActiveServer,
   getActiveServers,
   isActiveServer,
-  deleteActiveServer,
   getNeighbourhoodServerPublicKey,
   isInNeighbourhood,
   getConnection,
-  addConnection,
   getAndIncreaseCounter
 } = require("./server-state.js");
 
@@ -186,7 +181,6 @@ function isValidPublicChat(connectionId, data, counter, signature) {
     
     // When connection is active server, have to get public key using fingerprint
     const activeServer = getActiveServer(connectionId);
-    console.log("Active server: ", activeServer)
     publicKey = activeServer.getPublicKeyUsingFingerprint(fingerprint);
     
     // Ensure client is still connected to the server
@@ -340,6 +334,7 @@ function processSignedData (connectionId, payload, host) {
         payload.signature
       );
       sendClientUpdates();
+      sendClientLists(host);
       console.log(`ProcessHello returned: ${message}` ) 
       return;
 
@@ -397,9 +392,9 @@ function processSignedData (connectionId, payload, host) {
   }
 }
 
-// Processes requests of the type "client_list_request"
+// Generates requests of the type "client_list_request"
 // Returns a string or json string for websocket reply
-function processClientListReq (host) {
+function generateClientList (host) {
   
   let clientList = new ClientList();
   
@@ -425,7 +420,7 @@ function processClientListReq (host) {
   });
 
   // Stringify the object in preparation for sending
-  return JSON.stringify(clientList);
+  return clientList;
 }
 
 // Processes requests of the type "client_update"
@@ -493,6 +488,15 @@ function sendClientUpdates() {
   });
 }
 
+// Generates client updates to send to all active clients
+function sendClientLists(host) {
+  // Get connected client
+  const activeClients = getClients(); 
+  activeClients.forEach((_, connectionId) => {
+    let ws = getConnection(connectionId);
+    ws.send(JSON.stringify(generateClientList(host))) 
+  });  
+}
 
 // Generate Client Update Request
 // Returns a ClientUpdateRequest 
@@ -515,10 +519,11 @@ function generateServerHello(host) {
 
 module.exports = {
   processSignedData,
-  processClientListReq,
+  generateClientList,
   processClientUpdate,
   generateClientUpdate,
   generateClientUpdateReq,
   generateServerHello,
-  sendClientUpdates
+  sendClientUpdates,
+  sendClientLists
 }
