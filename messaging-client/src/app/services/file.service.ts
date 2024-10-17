@@ -1,3 +1,4 @@
+// Group 51: William Godfrey (a1743033) Alexandra Gramss (a1756431)
 import { Injectable, OnDestroy } from '@angular/core';
 import { DEFAULT_SERVER } from '../constants';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
