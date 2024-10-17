@@ -2,6 +2,9 @@
 
 const crypto = require('crypto');
 const { getPrivateKey } = require('./server-state');
+const fs = require('fs');
+const path = require('path')
+const { readdir, stat } = require('fs/promises');
 
 /* --- Classes --- */
 
@@ -181,6 +184,31 @@ function isValidCounter(counter, trackedCounter) {
   return true;
 }
 
+// Returns the size of the specified directory
+// Source: https://stackoverflow.com/questions/30448002/how-to-get-directory-size-in-node-js-without-recursively-going-through-directory
+async function getDirectorySize(directory){
+  // Returns an array of files in the dir
+  const files = await readdir( directory );
+  
+  // Gets array of stats corresponding to each file
+  const stats = files.map( 
+    file => stat( path.join( directory, file ) ) 
+  );
+  const fileStats = await Promise.all(stats);
+
+  // Sum all file sizes
+  let totalSize = 0
+  fileStats.forEach(fs => {
+
+    if (!fs.size){
+      console.error("Could not get file size for file stat: ", fs)
+    }
+    totalSize+=fs.size;
+  });
+
+  return totalSize;
+}
+
 module.exports = {
   ClientInfo,
   ActiveServerInfo,
@@ -188,5 +216,6 @@ module.exports = {
   isValidPublicKey,
   isValidCounter,
   isValidBase64Signature,
-  generateSignature
+  generateSignature,
+  getDirectorySize
 }

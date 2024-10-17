@@ -10,7 +10,8 @@ const path = require('path')
 const { v4: uuidv4 } = require('uuid');
 const { 
   parseJson,
-  ActiveServerInfo
+  ActiveServerInfo,
+  getDirectorySize
 } = require('./helper.js'); 
 const cors = require('cors');
 
@@ -37,6 +38,16 @@ const {
   sendClientUpdates,
   sendClientLists
 } = require("./protocol.js")
+
+// Constant Variables
+// Max file size = 25 MB
+const MAX_FILE_SIZE = 25 * 1024 * 1024
+// Max storage size - 1 GB
+const MAX_STORAGE_SIZE = 1024 * 1024 * 1024
+// File storage directory
+const FILE_STORAGE_DIR = 'uploads/';
+
+const FILE_STORAGE_PATH = path.join(__dirname, FILE_STORAGE_DIR);
 
 // Get the env file and setup config
 const ENV_FILE = process.argv[2] || 'server1.env';
@@ -220,23 +231,29 @@ function setupNeighbourhood () {
 // Set up file storage
 const storage = multer.diskStorage({
   // directory where files will be saved
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, 'uploads/');
+  destination: async (req, file, cb) => {
 
+    console.log("Filestoragepath: ", FILE_STORAGE_PATH)
+    
     // Check if the directory exists
-    if (!fs.existsSync(uploadPath)) {
+    if (!fs.existsSync(FILE_STORAGE_PATH)) {
       console.log("creating /uploads dir")
       // Create the directory if it does not exist
-      fs.mkdirSync(uploadPath, { recursive: true });
+      fs.mkdirSync(FILE_STORAGE_PATH, { recursive: true });
     }
 
-    cb(null, 'uploads/');  
+    // Check if the directory is full & empty directory if it is
+    const dirSize = await getDirectorySize(FILE_STORAGE_PATH);
+    const dirIsFull = dirSize >= MAX_STORAGE_SIZE - MAX_FILE_SIZE;
+    if (dirIsFull){
+      clearFileStorageDirectory();
+    }
+
+    cb(null, FILE_STORAGE_PATH);  
   },
    
   filename: (_, file, cb) => {
-    // Save file with unique UUID as filename
-    console.log("File ext name: ", path.extname(file.originalname));
-    
+    // Save file with unique UUID as filename    
     const uniqueFilename = uuidv4() + path.extname(file.originalname);
     cb(null, uniqueFilename); 
   }
@@ -246,9 +263,24 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: {
-    fileSize: 25 * 1024 * 1024  
+    fileSize: MAX_FILE_SIZE,
+    files: 1,
   }
 });
+
+// Removes all files in the file storage directory
+// Source: https://stackoverflow.com/questions/27072866/how-to-remove-all-files-from-directory-without-removing-directory-in-node-js
+function clearFileStorageDirectory(){
+  fs.readdir(FILE_STORAGE_PATH, (err, files) => {
+    if (err) console.error("Error clearing stored files: ", err) ;
+  
+    for (const file of files) {
+      fs.unlink(path.join(FILE_STORAGE_PATH, file), (err) => {
+        if (err) console.error("Error clearing stored files: ", err) ;
+      });
+    }
+  });
+}
 
 // Endpoint to handle file uploads
 app.post('/api/upload', upload.single('file'), (req, res) => {
