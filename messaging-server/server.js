@@ -1,7 +1,7 @@
 // Group 51: William Godfrey (a1743033) Alexandra Gramss (a1756431)
 
 const express = require('express');
-const http = require('http');
+const https = require('https');
 const WebSocket = require('ws');
 const fs = require('fs');
 const multer = require('multer');
@@ -47,12 +47,12 @@ initialiseKeys();
 // Setup https using server private and public key
 const httpsOptions = {
   key: fs.readFileSync(path.join(__dirname, 'ssl', 'server.key')),
-  cert: fs.readFileSync(path.join(__dirname, 'ssl', 'server.cert'))
+  cert: fs.readFileSync(path.join(__dirname, 'ssl', 'server.crt'))
 };
 
 // Setup servers
 const app = express()
-const server = http.createServer(app);
+const server =  https.createServer(httpsOptions, app);
 const wss = new WebSocket.Server({ server });
 app.use(cors());
 
@@ -180,7 +180,7 @@ function joinNeighbourhood () {
     }
 
     // Initialise websocket connection to address
-    const wsClient = new WebSocket("ws://"+ address);
+    const wsClient = new WebSocket("wss://"+ address, { rejectUnauthorized: false });
     const connectionId = uuidv4();
     console.log(`New connection: ${connectionId}`);
 
@@ -256,7 +256,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   console.log("Uploading file", req.file)
 
   // Generate a download URL based on the uploaded file's name (UUID)
-  const fileUrl = `http://${host}/api/download/${req.file.filename}`;
+  const fileUrl = `https://${host}/api/download/${req.file.filename}`;
   const body = { file_url: fileUrl }
 
   console.log("Sending response:", body);
@@ -278,7 +278,7 @@ app.get('/api/download/:uuid', (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}`);
+  console.log(`Listening at https://localhost:${port}`);
 });
 
 setupNeighbourhood();

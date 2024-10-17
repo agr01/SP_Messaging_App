@@ -35,7 +35,7 @@ export class WebSocketService {
     
     console.log(`Connecting to ${this.currentServer}`);
 
-    const url = "ws://" + this.currentServer
+    const url = "wss://" + this.currentServer
 
     this.webSocket = new WebSocket(url);
 
@@ -81,7 +81,7 @@ export class WebSocketService {
   // If an attempt to connect has been made to all servers, waits 5 seconds before trying to reconnect
   private reconnect() {
 
-    const prevServerUrl = "ws://" + this.currentServer
+    const prevServerUrl = "wss://" + this.currentServer
 
     // If last server was not default - try connecting to default first
     if (prevServerUrl !== this.defaultWebSocketUrl){

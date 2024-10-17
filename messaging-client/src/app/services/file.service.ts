@@ -12,7 +12,7 @@ export class FileService implements OnDestroy{
 
   private uploadServer: string = DEFAULT_SERVER;
 
-  private uploadUrl = 'http://' + DEFAULT_SERVER;
+  private uploadUrl = 'https://' + DEFAULT_SERVER;
 
   private connectedServerSubscription = new Subscription
 
@@ -24,7 +24,7 @@ export class FileService implements OnDestroy{
     webSocketService.connectedServer$.subscribe(
       (server) => {
         this.uploadServer = server;
-        this.uploadUrl = 'http://' + server + "/api/upload"
+        this.uploadUrl = 'https://' + server + "/api/upload"
         
         console.log("Setting upload server addr", this.uploadUrl);
       }
@@ -50,7 +50,7 @@ export class FileService implements OnDestroy{
     if (!server || !port) return;
 
     this.uploadServer = server + ":" + (port + 100).toString()
-    this.uploadUrl = 'http://' + this.uploadServer
+    this.uploadUrl = 'https://' + this.uploadServer
   }
 
   // Returns the port from an address:port string as a number or null

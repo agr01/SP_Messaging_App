@@ -71,7 +71,7 @@ Note: The client application has a group chat size limit of 10
 To run a one of instance of the server, ensure you are in the messaging-server directory in your terminal and run the following:
 ```node server.js```
 - Base server url will be localhost:3000.
-- To connect using a WebSocket, use  ws://localhost:3000. 
+- To connect using a WebSocket, use  wss://localhost:3000. 
 - Server will accept any of the client messages OLAF's Neighbourhood protocol.
 - Server will validate other servers before adding them to the neighbourhood.
 - To change the allowed neighbourhood servers, modify the 2 arrays function ```setupNeighbourhood```. A neighbourhood server will have an address and a publicKey, one in each array respectively. The array indexes of servers will match.  
