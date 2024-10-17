@@ -45,7 +45,7 @@ const MAX_FILE_SIZE = 25 * 1024 * 1024
 // Max storage size - 1 GB
 const MAX_STORAGE_SIZE = 1024 * 1024 * 1024
 // File storage directory
-const FILE_STORAGE_DIR = 'uploads/';
+const FILE_STORAGE_DIR = '../server-uploads/';
 
 const FILE_STORAGE_PATH = path.join(__dirname, FILE_STORAGE_DIR);
 
