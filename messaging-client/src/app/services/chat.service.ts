@@ -21,9 +21,9 @@ import { sanitizeSignedData, SignedData } from '../models/signed-data';
 })
 export class ChatService {
 
-  private messages: ChatMessage[] = []
+  private _messages: ChatMessage[] = []
 
-  private _messagesSubject = new BehaviorSubject<ChatMessage[]>(this.messages);
+  private _messagesSubject = new BehaviorSubject<ChatMessage[]>(this._messages);
   public messages$ = this._messagesSubject.asObservable();
  
 
@@ -78,8 +78,6 @@ export class ChatService {
     this.addMessage(this.publicChatToChatMessage(publicChat))
   }
 
-  
-  // TODO: Add group chat limit to readme
   // Note: This client restricts the max group size to limit resources
   // spent on attempting to decrypt symm_keys
   private async processChat(signedData: SignedData){
