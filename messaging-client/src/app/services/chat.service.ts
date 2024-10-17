@@ -1,3 +1,4 @@
+// Group 51: William Godfrey (a1743033) Alexandra Gramss (a1756431)
 import { Injectable } from '@angular/core';
 import { WebSocketService } from './web-socket.service';
 import { catchError, retry, throwError, tap, Subject, BehaviorSubject } from 'rxjs';
@@ -21,9 +22,9 @@ import { sanitizeSignedData, SignedData } from '../models/signed-data';
 })
 export class ChatService {
 
-  private messages: ChatMessage[] = []
+  private _messages: ChatMessage[] = []
 
-  private _messagesSubject = new BehaviorSubject<ChatMessage[]>(this.messages);
+  private _messagesSubject = new BehaviorSubject<ChatMessage[]>(this._messages);
   public messages$ = this._messagesSubject.asObservable();
  
 

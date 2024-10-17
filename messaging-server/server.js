@@ -1,3 +1,5 @@
+// Group 51: William Godfrey (a1743033) Alexandra Gramss (a1756431)
+
 const express = require('express');
 const http = require('http')
 const https = require('https')
@@ -144,7 +146,9 @@ const storage = multer.diskStorage({
   filename: (_, file, cb) => {
     console.log("file original name: ", file.originalname)
     // Save file with unique UUID as filename
-    const uniqueFilename = uuidv4() + file.originalname;
+    console.log("File ext name: ", path.extname(file.originalname));
+    
+    const uniqueFilename = uuidv4() + path.extname(file.originalname);
     cb(null, uniqueFilename); 
   }
 });

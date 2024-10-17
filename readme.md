@@ -62,6 +62,7 @@ To send a private message, select any recipient from the sidebar.</br>
 To send a private group message, select multiple recipients from the sidebar.</br>
 To view group messages, you must select all recipients in the group.</br>
 
+Note: The client application has a group chat size limit of 10
 
 # Running individual clients / servers
 
@@ -93,6 +94,10 @@ To run a one of instance of the client, ensure you are in the messaging-client d
 - To send a private group chat message, Click on all of the participants for the group chat so that they are all highlighted 
 - To upload a file click the paper clip icon next to the send button.
 - To download a file, paste the download link in your browser.
+
+Adding more servers:</br>
+The list of available servers is set in the app/constants.ts file.</br>
+Simply modify the SERVERS array to add more available servers.
 
 Specifying port: ```ng serve --port 4201```
 This is the port that the web app will be served on.

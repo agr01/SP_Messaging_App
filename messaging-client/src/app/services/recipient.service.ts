@@ -1,3 +1,4 @@
+// Group 51: William Godfrey (a1743033) Alexandra Gramss (a1756431)
 import { Injectable, OnDestroy } from '@angular/core';
 import { WebSocketService } from './web-socket.service';
 import { Hello } from '../models/hello';
@@ -6,6 +7,7 @@ import { CryptoService } from './crypto.service';
 import { BehaviorSubject, combineLatestWith, interval, subscribeOn, Subscription } from 'rxjs';
 import { Client } from '../models/client';
 import { SignedData } from '../models/signed-data';
+import { MAX_GROUP_CHAT_SIZE } from '../constants';
 
 
 // Manages online recipients and recipients selected in the sidebar
@@ -174,6 +176,7 @@ export class RecipientService implements OnDestroy {
     // A group cannot contain public
     if (clientFingerprint === "public"){
       this._selectedRecipients.next(new Set(["public"]));
+      return;
     }
 
     // Clear public if it is in the list of selected clients
@@ -188,7 +191,9 @@ export class RecipientService implements OnDestroy {
       // If selected clients is empty - default to public
       if (selectedRecipientFingerprints.size < 1) selectedRecipientFingerprints.add("public")
     }
-    else selectedRecipientFingerprints.add(clientFingerprint);
+    // Limit participants by max group chat size
+    else if (selectedRecipientFingerprints.size < MAX_GROUP_CHAT_SIZE) 
+      selectedRecipientFingerprints.add(clientFingerprint);
 
     this.updateSelectedRecipients(selectedRecipientFingerprints);
   }

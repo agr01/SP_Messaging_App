@@ -1,3 +1,4 @@
+// Group 51: William Godfrey (a1743033) Alexandra Gramss (a1756431)
 import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { ChatService } from '../../services/chat.service';
 import { FormsModule } from '@angular/forms';

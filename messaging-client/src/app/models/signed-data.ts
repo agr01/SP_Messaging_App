@@ -1,3 +1,4 @@
+// Group 51: William Godfrey (a1743033) Alexandra Gramss (a1756431)
 import { isNonEmptyString, isNumber } from "../helpers/validators"
 import { ChatData, isChatData, sanitizeChatData } from "./chat-data"
 import { Hello } from "./hello"

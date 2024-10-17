@@ -1,3 +1,4 @@
+// Group 51: William Godfrey (a1743033) Alexandra Gramss (a1756431)
 
 const serverAddressRegex = /^(localhost:\d{1,5}|(\d{1,3}\.){3}\d{1,3}:\d{1,5})$/;
 const pemKeyRegex = /^-----BEGIN PUBLIC KEY-----\n([A-Za-z0-9+/=\n]+)\n-----END PUBLIC KEY-----$/;
