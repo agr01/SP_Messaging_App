@@ -29,12 +29,13 @@ const {
 
 const {
   processSignedData,
-  processClientListReq,
+  generateClientList,
   processClientUpdate,
   generateClientUpdate,
   generateClientUpdateReq,
   generateServerHello,
-  sendClientUpdates
+  sendClientUpdates,
+  sendClientLists
 } = require("./protocol.js")
 
 // Get the env file and setup config
@@ -104,7 +105,7 @@ function setupWebSocketEvents(ws, host, type, connectionId, address) {
 
     // If payload is of type "client_list_request"
     if (payload.type === "client_list_request") {
-      reply = processClientListReq(host);
+      reply = JSON.stringify(generateClientList(host));
     }
 
     // If payload is of type "client_update_request"
@@ -135,6 +136,8 @@ function setupWebSocketEvents(ws, host, type, connectionId, address) {
     if (isClient(connectionId)){
       console.log(`Client ${connectionId} removed from client list`);
       deleteClient(connectionId);
+
+      // Update connected servers with connected clients
       sendClientUpdates();
     }
     
@@ -145,8 +148,10 @@ function setupWebSocketEvents(ws, host, type, connectionId, address) {
     }
 
     // Cleanup WebSocket connection for client
-    // Potential security flaw - don't cleanup connection
     deleteConnection(connectionId);
+
+    // Update all connected clients
+    sendClientLists(host);
   });
 
   ws.on('error', (error) => {
