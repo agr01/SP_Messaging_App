@@ -243,6 +243,8 @@ export class CryptoService {
     try {
       const keyBuffer = this.base64toUint8Array(base64Key).buffer;
 
+      console.log("Successfully converted base64 to keybuffer");
+
       return await window.crypto.subtle.importKey(
         "raw",
         keyBuffer,
@@ -368,20 +370,27 @@ export class CryptoService {
   // Decode the Base64 string to a byte array
   // Source: https://www.geeksforgeeks.org/convert-base64-string-to-arraybuffer-in-javascript/
   public base64toUint8Array(base64string: string): Uint8Array{
-    const binaryString = window.atob(base64string);
-    const bytes = new Uint8Array(binaryString.length);
-    
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
 
-    return bytes
+    try {
+      const binaryString = window.atob(base64string);
+      const bytes = new Uint8Array(binaryString.length);
+      
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      return bytes
+    } catch (error) {
+      console.error("Failed to convert base64 string to Uint8Array");
+      throw error; 
+    }
+    
   }
 
   public async validateSignature(publicKeyPem: string, data: string, base64signature: string): Promise<boolean>{
 
     const uint8data = new TextEncoder().encode(data);
-    const uint8signature = this.base64toUint8Array(base64signature);
+    const uint8signature = this.base64toUint8Array(base64signature).buffer;
 
     try {
       const key = await this.pemToVerifyCryptoKey(publicKeyPem);
