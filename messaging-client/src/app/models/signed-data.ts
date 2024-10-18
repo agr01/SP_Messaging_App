@@ -6,7 +6,8 @@ import { isPublicChat, PublicChat, sanitizePublicChat } from "./public-chat"
 
 export interface SignedData {
     type: string        // "signed_data",
-    data: Hello | ChatData | PublicChat 
+    // data: Hello | ChatData | PublicChat 
+    data: string
     counter: number     // 12345,
     signature: string   // "<Base64 encoded (signature of (data JSON concatenated with counter))>"
 }

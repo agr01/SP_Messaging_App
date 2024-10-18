@@ -416,7 +416,7 @@ export class CryptoService {
   
       signedData.type = "signed_data"
       signedData.counter = this._userCounter;
-      signedData.data = data;
+      signedData.data = JSON.stringify(data);
   
       const dataToSign = JSON.stringify(data) + signedData.counter.toString();
   
