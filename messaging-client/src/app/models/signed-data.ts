@@ -1,4 +1,5 @@
 // Group 51: William Godfrey (a1743033) Alexandra Gramss (a1756431)
+import { parseJson } from "../helpers/conversion-functions"
 import { isNonEmptyString, isNumber } from "../helpers/validators"
 import { ChatData, isChatData, sanitizeChatData } from "./chat-data"
 import { Hello } from "./hello"
@@ -18,14 +19,15 @@ export function sanitizeSignedData(obj: any): SignedData | null{
     if (!isIncomingSignedData(obj)) return null
 
     let sanitizedData = null
-    if (isChatData(obj.data)) sanitizedData = sanitizeChatData(obj.data);
-    else if (isPublicChat(obj.data)) sanitizedData = sanitizePublicChat(obj.data);
+    let parsedData = parseJson(obj.data);
+    if (isChatData(parsedData)) sanitizedData = sanitizeChatData(parsedData);
+    else if (isPublicChat(parsedData)) sanitizedData = sanitizePublicChat(parsedData);
 
     if (!sanitizedData) return null;
 
     return {
         type: obj.type,
-        data: sanitizedData,
+        data: JSON.stringify(sanitizedData),
         counter: obj.counter,
         signature: obj.signature
     }

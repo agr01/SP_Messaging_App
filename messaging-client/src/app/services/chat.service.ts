@@ -51,13 +51,17 @@ export class ChatService {
       return null
     };
 
-    if (!signedData.data || !signedData.data.type) return;
+    
 
-    if (signedData.data.type === "public_chat"){
+    if (!signedData.data || typeof signedData.data === "string") return;
+
+    const data = parseJson(signedData.data);
+
+    if (data.type && data.type === "public_chat"){
       this.processPublicChat(signedData);
     }
 
-    if (signedData.data.type === "chat"){
+    if (data.type === "chat"){
       this.processChat(signedData);
     }
 
@@ -66,7 +70,7 @@ export class ChatService {
 
   // Sanitize public chat message & add to messages
   private async processPublicChat(signedData: SignedData){
-    const message = signedData.data;
+    const message = parseJson(signedData.data);
 
     const publicChat = sanitizePublicChat(message);
     if (!publicChat) return;
@@ -82,7 +86,7 @@ export class ChatService {
   // Note: This client restricts the max group size to limit resources
   // spent on attempting to decrypt symm_keys
   private async processChat(signedData: SignedData){
-    const message = signedData.data;
+    const message = parseJson(signedData.data);
 
     const chatData = sanitizeChatData(message);
     if (!chatData) return;
