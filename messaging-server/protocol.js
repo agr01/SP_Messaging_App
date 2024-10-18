@@ -24,6 +24,7 @@ const {
   isValidPublicKey,
   generateSignature
 } = require('./helper.js');
+const { json } = require("express");
 
 // List of valid data types within a "signed_data" payload
 const validDataTypes = ["hello", "server_hello", "chat", "public_chat"]
@@ -281,8 +282,8 @@ function isValidChat(connectionId, data, counter, signature) {
 
 // Forwards the "chat" payload to relevant connected clients and servers
 // except the sender
-function forwardChat(connectionId, host, payload) {
-  const dests = payload.data.destination_servers;
+function forwardChat(connectionId, host, payload, data) {
+  const dests = data.destination_servers;
 
   console.log(`Checking whether host ${host} is included`);
   // Don't send chat to other clients unless destinations includes host
@@ -316,8 +317,13 @@ function forwardChat(connectionId, host, payload) {
 // Returns json string if there is a reply; otherwise undefined
 function processSignedData (connectionId, payload, host) {
 
-  // Check for invalid data.type
-  const dataType = payload.data.type;
+  let data = payload.data;
+  if (typeof data === "string") {
+    data = parseJson(payload.data);
+  }
+
+  // Check for invalid data.tpe
+  const dataType = data.type;
   if (dataType === undefined || !validDataTypes.includes(dataType)) {
     console.log("Invalid signed_data: data.type is invalid or missing");
     return;
@@ -329,7 +335,7 @@ function processSignedData (connectionId, payload, host) {
       console.log("Processing hello message");
       let message = processHello(
         connectionId,
-        payload.data,
+        data,
         payload.counter,
         payload.signature
       );
@@ -343,7 +349,7 @@ function processSignedData (connectionId, payload, host) {
         console.log(`Processing server_hello message`);
         let success = processServerHello(
           connectionId,
-          payload.data,
+          data,
           payload.counter,
           payload.signature
         );
@@ -365,7 +371,7 @@ function processSignedData (connectionId, payload, host) {
         console.log("Processing public chat");
         if (isValidPublicChat(
           connectionId,
-          payload.data,
+          data,
           payload.counter,
           payload.signature)
         ) {
@@ -380,13 +386,13 @@ function processSignedData (connectionId, payload, host) {
         console.log("Processing chat message");
         if (isValidChat(
           connectionId,
-          payload.data,
+          data,
           payload.counter,
           payload.signature)
         ) {
           // Only forward public chat if message is valid
           console.log("Forwarding chat");
-          forwardChat(connectionId, host, payload);
+          forwardChat(connectionId, host, payload, data);
         } 
         return;
   }
