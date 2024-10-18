@@ -75,7 +75,8 @@ To run a one of instance of the server, ensure you are in the messaging-server d
 - To connect using a WebSocket, use  wss://localhost:3000. 
 - Server will accept any of the client messages OLAF's Neighbourhood protocol.
 - Server will validate other servers before adding them to the neighbourhood.
-- To change the allowed neighbourhood servers, modify the 2 arrays function ```setupNeighbourhood```. A neighbourhood server will have an address and a publicKey, one in each array respectively. The array indexes of servers will match.  
+
+- To change the allowed neighbourhood servers, modify the servers.json file.
 
 There is also the option of running more than server using the same code. 2 sample .env files have been provided.
 To run these, 2 separate terminals are required. In each, run one of the following:
