@@ -1,8 +1,8 @@
 // Group 51: William Godfrey (a1743033) Alexandra Gramss (a1756431)
 import { Injectable } from '@angular/core';
-import { Subject, BehaviorSubject} from 'rxjs';
+import { Subject, BehaviorSubject, timer, take, switchMap, of} from 'rxjs';
 import { CryptoService } from './crypto.service';
-import { DEFAULT_SERVER, DEFAULT_WEBSOCKET, SERVERS } from '../constants';
+import { DEFAULT_SERVER, SERVERS } from '../constants';
 
 
 @Injectable({
@@ -69,7 +69,7 @@ export class WebSocketService {
     };
 
     this.webSocket.onclose = (event) => {
-      console.log(`WebSocket closed: ${event.code}, reason: ${event.reason}`);
+      console.log(`WebSocket closed: ${event.code}`);
       this.connectionIsOpen.next(false);
       
       // Attempt to reconnect
@@ -81,10 +81,11 @@ export class WebSocketService {
   // If an attempt to connect has been made to all servers, waits 5 seconds before trying to reconnect
   private reconnect() {
 
-    const prevServerUrl = "ws://" + this.currentServer
+    this.webSocket.close();
 
     // If last server was not default - try connecting to default first
-    if (prevServerUrl !== this.defaultWebSocketUrl){
+    if (this.currentServer !== this.defaultWebSocketUrl){
+      console.log("Retrying default server");
       this.currentServer = this.defaultWebSocketUrl;
       this.connect();
       return;

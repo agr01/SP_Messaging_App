@@ -8,7 +8,6 @@ import { combineLatest, combineLatestWith, Subscription } from 'rxjs';
 import { UserService } from './services/user.service';
 import { WebSocketService } from './services/web-socket.service';
 import { HeaderComponent } from './components/header/header.component';
-import { DEFAULT_SERVER, DEFAULT_WEBSOCKET } from './constants';
 import { SpinnerComponent } from "./components/spinner/spinner.component";
 
 @Component({
