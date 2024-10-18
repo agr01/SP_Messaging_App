@@ -40,13 +40,15 @@ const {
 } = require("./protocol.js")
 
 // Constant Variables
+SERVERS_FILE = "./servers.json"
+
+// File Storage
 // Max file size = 25 MB
 const MAX_FILE_SIZE = 25 * 1024 * 1024
 // Max storage size - 1 GB
 const MAX_STORAGE_SIZE = 1024 * 1024 * 1024
 // File storage directory
 const FILE_STORAGE_DIR = '../server-uploads/';
-
 const FILE_STORAGE_PATH = path.join(__dirname, FILE_STORAGE_DIR);
 
 // Get the env file and setup config
@@ -208,22 +210,21 @@ function joinNeighbourhood () {
 }
 
 // Function to open a websocket connection to all listed neighbourhood servers
-function setupNeighbourhood () {
-  
-  // List servers and publicKeys to put into neighbourhood map
-  const numServers = 2;
-  const serverAddresses = [
-    "localhost:3000",
-    "localhost:3001"
-  ]
-  const publicKeys = [
-    "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtGqTe0Y0+wf0AZIHCROZ8FY03+1RurIILj775S9HhbFJXjp+JfxM73EoYv4VfjIMix+tkSk1qVB2dLMk1LVkKtw9ZWe9vwmerW17+tf6+ZEB4sLsPj1wyBXrShO9voHWA6lbEqPdmF2gcdhnejG0+GzdW+mfYb2ROwmFmkajGSYdGJIz6c0zwY83TD+IeCqvv0wTKZp71DWoPS7kPacsXbdQcYMV0Kp7gAOYI4Uy/6h3/rjhmgFZWiJJ/xYHh2bNbKSnTEvgdfInj1EBy/dpjNsI4zdfWV74mzivkf1ojVCvAW+QrO1sEtG/HFtiReIvLZNXirNnhYU+SMnW0Xs5GwIDAQAB\n-----END PUBLIC KEY-----",
-    "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwGUeqejbScEvYpTb22QyjlOeLJV30bhJOOPDh4OIHBjNpGfNwe7YMZcSEmSbgWp1SmQVukgr09/FvxpbaVOndnx6LegpXIp1d9QZXc7AGuQJXKdOWzDA87O2UbfZSOHVGcn87r6EesMjc+SS9T1gxcIldbm6pdIqEU/ThQLD6rKK56G0TNzI97Qp7g+sXLV7h19s91bLwQScwypwpi2DZ9/UJMVAyvmAbelIXmU3yfwpFywZerHFtFssucg5WMXk69B2sRRv0Hfi+JVEkWEAdOWfm4o6es2GWT0ddXRmZNThmx7BLR/tfg+PZgo7N/bfLNrwkEUEnxKqZzOt+DjaAwIDAQAB\n-----END PUBLIC KEY-----"
-  ]
+function setupNeighbourhood() {
+  // Get servers from servers.json
+  const serversArr = JSON.parse(fs.readFileSync(SERVERS_FILE).toString());
 
-  for(i = 0; i < numServers; i++){
-    insertNeighbourhoodServer(serverAddresses[i], publicKeys[i])
+  let serverAddresses = [];
+  let numServers = 0;
+  let publicKeys = [];
+
+  for (const server of serversArr){
+    if (typeof server.address !== "string" || typeof server.pubKeyPem !== "string") 
+      throw Error("Invalid server in servers.json");
+    
+    insertNeighbourhoodServer(server.address, server.pubKeyPem)
   }
+  
 }
 
 /* --- HTTPS File Upload/Download --- */
