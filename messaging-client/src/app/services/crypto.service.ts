@@ -405,22 +405,25 @@ export class CryptoService {
     return true;
   }
 
-  public async signData(data: Hello | ChatData | PublicChat ): Promise<SignedData>{
+  public async signData(data: Hello | ChatData | PublicChat ): Promise<any>{
     
     try {
       if (this._userCounter >= Number.MAX_SAFE_INTEGER){
         throw Error("Cannot sign message. User counter too large.")
       }
   
-      let signedData = {} as SignedData;
+      const encodedData = JSON.stringify(data);
   
-      signedData.type = "signed_data"
-      signedData.counter = this._userCounter;
-      signedData.data = JSON.stringify(data);
+      const dataToSign = encodedData + this._userCounter.toString();
   
-      const dataToSign = JSON.stringify(data) + signedData.counter.toString();
-  
-      signedData.signature = await this.signRsa(dataToSign);
+      const signature = await this.signRsa(dataToSign);
+
+      const signedData = {
+        type: "signed_data",
+        counter: this._userCounter,
+        data: encodedData,
+        signature: signature
+      }
       
       this._userCounter++;
   
