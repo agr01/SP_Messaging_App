@@ -303,7 +303,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 
 // Endpoint to download files
 app.get('/api/download/:uuid', (req, res) => {
-  const filePath = path.join(__dirname, 'uploads', req.params.uuid);
+  const filePath = path.join(FILE_STORAGE_PATH, req.params.uuid);
 
   // Check if the file exists
   if (fs.existsSync(filePath)) {
