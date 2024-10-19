@@ -3,7 +3,7 @@ By Alex Gramss (a1756431) and William Godfrey (a1743033)
 
 ## Important note - CLI
 The following commands can be executed using the following CLIs: cmd, powershell or bash.
-However, the example bash commands provided have not been tested. 
+However, the example bash commands provided have not been tested. This readme does not include instructions on how to install ssl certificates for linux.
 
 Windows powershell is preferred.
 
@@ -13,9 +13,11 @@ Windows powershell is preferred.
 2. Install angular. This can be done using by running the following command (in a terminal of your choice) ```npm i @angular/cli```
 3. Run ```npm ci``` in the messaging-server directory. 
 4. Run ```npm ci``` in the messaging-client directory.
-5. Install the self-signed server certificate as a trusted certificate. How this is done will vary between OS's. Located in ```./messaging-server/ssl/```.</br>
+5. Install the self-signed server certificate as a trusted certificate. How this is done will vary between OS's . For windows, see instructions below. The certificates are located in ```./messaging-server/ssl/```.</br>
+6. Run servers as per below, then navigate to the address of each running server (https://localhost:PORT) in your browser. Accept any certificate risks and continue / proceed. This should return "Cannot GET /"
 
 Windows ssl cert installation instructions: 
+admin console: winget install openssl
 1. Open the /messaging-server/ssl/server.crt file in your file explorer.
 2. Double click the server.crt file
 3. Select "Install Certificate..."
@@ -23,6 +25,7 @@ Windows ssl cert installation instructions:
 5. Select "Place all certificates in the following store"
 6. Click "Browse" and select the "Trusted Root Certification Authorities" folder.
 7. Select next then finish.
+
 
 ## Simulated environment
 
