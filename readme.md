@@ -13,7 +13,16 @@ Windows powershell is preferred.
 2. Install angular. This can be done using by running the following command (in a terminal of your choice) ```npm i @angular/cli```
 3. Run ```npm ci``` in the messaging-server directory. 
 4. Run ```npm ci``` in the messaging-client directory.
-5. Install the self-signed server certificate as a trusted certificate. How this is done will vary between OS's. Located in ```./messaging-server/ssl/```.
+5. Install the self-signed server certificate as a trusted certificate. How this is done will vary between OS's. Located in ```./messaging-server/ssl/```.</br>
+
+Windows ssl cert installation instructions: 
+1. Open the /messaging-server/ssl/server.crt file in your file explorer.
+2. Double click the server.crt file
+3. Select "Install Certificate..."
+4. Select "Current User"
+5. Select "Place all certificates in the following store"
+6. Click "Browse" and select the "Trusted Root Certification Authorities" folder.
+7. Select next then finish.
 
 ## Simulated environment
 
